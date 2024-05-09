@@ -1,24 +1,97 @@
+// Copyright (c) 2023-2024 Francisco Llobet-Blandino and the "Miso Project".
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the “Software”), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 const std = @import("std");
+const microzig = @import("microzig");
 
-pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+pub fn main() noreturn {
+    //
+    while (true) { //
+    }
 
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
-
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
-
-    try bw.flush(); // don't forget to flush!
+    unreachable;
 }
 
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
+pub fn init() void {
+    //SystemInit();
 }
+
+pub fn GPIO_EVEN() callconv(.C) void {
+    //c.GPIO_EVEN_IRQHandler();
+}
+pub fn GPIO_ODD() callconv(.C) void {
+    //c.GPIO_ODD_IRQHandler();
+}
+pub fn RTC() callconv(.C) void {
+    //c.RTC_IRQHandler();
+}
+pub fn DMA() callconv(.C) void {
+    //c.DMA_IRQHandler();
+}
+pub fn I2C0() callconv(.C) void {
+    //c.I2C0_IRQHandler();
+}
+pub fn USB() callconv(.C) void {
+    //c.USB_IRQHandler();
+}
+pub fn TIMER0() callconv(.C) void {
+    //c.TIMER0_IRQHandler();
+}
+pub fn SysTick() callconv(.C) void {
+    //
+}
+/// Redirecting the PendSV to the FreeRTOS handler
+//pub const PendSV = xPortPendSVHandler;
+
+/// Redirecting the SVCall to the FreeRTOS handler
+//pub const SVCall = vPortSVCHandler;
+
+pub fn HardFault() callconv(.C) void {
+    microzig.hang(); //c_board.BOARD_MCU_Reset();
+}
+pub fn MemManageFault() callconv(.C) void {
+    microzig.hang(); //c_board.BOARD_MCU_Reset();
+}
+
+pub fn BusFault() callconv(.C) void {
+    microzig.hang();
+}
+
+pub fn UsageFault() callconv(.C) void {
+    microzig.hang();
+}
+
+const Handler = microzig.interrupt.Handler;
+
+pub const microzig_options = .{
+    .interrupts = .{
+        .HardFault = Handler{ .C = HardFault },
+        .MemManageFault = Handler{ .C = MemManageFault },
+        .BusFault = Handler{ .C = BusFault },
+        .UsageFault = Handler{ .C = UsageFault },
+        .GPIO_EVEN = Handler{ .C = GPIO_EVEN },
+        .GPIO_ODD = Handler{ .C = GPIO_ODD },
+        .RTC = Handler{ .C = RTC },
+        .DMA = Handler{ .C = DMA },
+        .I2C0 = Handler{ .C = I2C0 },
+        .USB = Handler{ .C = USB },
+        .TIMER0 = Handler{ .C = TIMER0 },
+        .SysTick = Handler{ .C = SysTick },
+    },
+};

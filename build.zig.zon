@@ -43,6 +43,26 @@
         //    // actually used.
         //    .lazy = false,
         //},
+        // See `zig fetch --save <url>` for a command-line interface for adding dependencies.
+        .microzig = .{
+            //    .hash = "...",
+            //
+            //    // When this is provided, the package is found in a directory relative to the
+            //    // build root. In this case the package's hash is irrelevant and therefore not
+            //    // computed. This field and `url` are mutually exclusive.
+            .path = "deps/microzig",
+
+            //    // When this is set to `true`, a package is declared to be lazily
+            //    // fetched. This makes the dependency only get fetched if it is
+            //    // actually used.
+            //    .lazy = false,
+        },
+        .@"microzig/build" = .{
+            .path = "deps/microzig/build",
+        },
+        .@"bsp/xdk110" = .{
+            .path = "bsp/xdk110",
+        },
     },
 
     // Specifies the set of files and directories that are included in this package.
