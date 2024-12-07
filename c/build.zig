@@ -1,74 +1,72 @@
 const std = @import("std");
-const microzig = @import("microzig");
 
-const MicroBuild = microzig.MicroBuild(.{
-    .efm32 = true,
-});
-
+// Although this function looks imperative, note that its job is to
+// declaratively construct a build graph that will be executed by an external
+// runner.
 pub fn build(b: *std.Build) void {
+    //const target = b.standardTargetOptions(.{});
+
+    // Overiding the target for practice
+    const target = b.resolveTargetQuery(.{
+        .cpu_arch = .thumb,
+        .cpu_model = .{
+            .explicit = &std.Target.arm.cpu.cortex_m3,
+        },
+        .os_tag = .freestanding,
+        .abi = .eabi,
+    });
+
     const optimize = b.standardOptimizeOption(.{});
 
-    const mz_dep = b.dependency("microzig", .{});
-    const mb = MicroBuild.init(b, mz_dep) orelse return;
+    const lib = b.addStaticLibrary(.{
+        .name = "csrc", // Board support package
+        //.root_source_file = b.path("src/board.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
 
-    const available_examples = [_]Example{
-        .{ .target = mb.ports.efm32.chips.efm32gg390f1024, .name = "EFM32GG390", .file = "src/main.zig" },
-    };
+    lib.addSystemIncludePath(b.path("../picolibc/clang-compiled/picolibc/include"));
+    lib.addIncludePath(b.path(board_base_dir ++ "/inc"));
 
-    //b.add
+    lib.addIncludePath(b.path("config"));
 
-    for (available_examples) |example| {
-        // `add_firmware` basically works like addExecutable, but takes a
-        // `microzig.Target` for target instead of a `std.zig.CrossTarget`.
-        //
-        // The target will convey all necessary information on the chip,
-        // cpu and potentially the board as well.
-        const fw = mb.add_firmware(.{
-            .name = example.name,
-            .target = example.target,
-            .optimize = optimize,
-            .root_source_file = b.path(example.file),
-        });
-
-        const package = b.dependency("miso/csrc", .{
-            .optimize = optimize,
-        });
-
-        const module = package.module("board");
-
-        //fw.add_app_import(name: []const u8, module: *Build.Module, options: AppDependencyOptions)
-        fw.add_app_import("miso/csrc", module, .{});
-
-        fw.add_object_file(b.path("picolibc/clang-compiled/picolibc/libc.a"));
-
-        fw.add_object_file(package.artifact("csrc").getEmittedBin());
-        //fw.add_object_file(package.artifact("csrc").);
-        //package.path("sub_path: []const u8")
-        //fw.add_object_file("libcsrc.a");
-        //fw.add_app_import("miso/csrc", module: *Build.Module, options: AppDependencyOptions)
-
-        //fw.add_system_include_path(b.path(board_base_dir));
-        //b.addInstallHeaderFile(source: LazyPath, dest_rel_path: []const u8)
-        //package.path(sub_path: []const u8)
-        // `install_firmware()` is the MicroZig pendant to `Build.installArtifact()`
-        // and allows installing the firmware as a typical firmware file.
-        //
-        // This will also install into `$prefix/firmware` instead of `$prefix/bin`.
-        mb.install_firmware(fw, .{ .format = .bin });
-
-        // For debugging, we also always install the firmware as an ELF file
-        mb.install_firmware(fw, .{ .format = .elf });
+    for (gecko_include_path) |p| {
+        lib.addIncludePath(b.path(p));
     }
+
+    for (board_source_paths) |p| {
+        lib.addCSourceFile(.{ .file = b.path(p), .flags = &gecko_sdk_c_flags });
+    }
+
+    for (gecko_sdk_source_paths) |p| {
+        lib.addCSourceFile(.{ .file = b.path(p), .flags = &gecko_sdk_c_flags });
+    }
+
+    // Process modules
+    const board_module = b.addModule("board", .{
+        .root_source_file = b.path("src/board.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    board_module.addIncludePath(b.path("board/inc"));
+    for (gecko_include_path) |p| {
+        board_module.addIncludePath(b.path(p));
+    }
+
+    lib.installHeader(b.path("board/inc/board.h"), "board.h");
+
+    board_module.addSystemIncludePath(b.path("../picolibc/clang-compiled/picolibc/include"));
+    board_module.addIncludePath(b.path("config"));
+
+    // This declares intent for the library to be installed into the standard
+    // location when the user invokes the "install" step (the default step when
+    // running `zig build`).
+    b.installArtifact(lib);
 }
 
-const Example = struct {
-    target: *const microzig.Target,
-    name: []const u8,
-    file: []const u8,
-};
-
-const gecko_sdk_base_dir = "c/ext/gecko_sdk/platform";
-const board_base_dir = "c/board";
+const gecko_sdk_base_dir = "ext/gecko_sdk/platform";
+const board_base_dir = "board";
 
 const gecko_include_path = [_][]const u8{
     // Gecko-SDK Defines

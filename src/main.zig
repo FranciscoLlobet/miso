@@ -20,26 +20,32 @@
 const std = @import("std");
 const microzig = @import("microzig");
 
+const board = @import("miso/csrc");
+
 pub fn main() noreturn {
     //
+
+    board.init();
+
     while (true) { //
+        // microzig.hal.leds.orange.on();
     }
 
     unreachable;
 }
 
 pub fn init() void {
-    //SystemInit();
+    // SystemInit();
 }
 
 pub fn GPIO_EVEN() callconv(.C) void {
     //c.GPIO_EVEN_IRQHandler();
 }
 pub fn GPIO_ODD() callconv(.C) void {
-    //c.GPIO_ODD_IRQHandler();
+    // c.GPIO_ODD_IRQHandler();
 }
 pub fn RTC() callconv(.C) void {
-    //c.RTC_IRQHandler();
+    // c.RTC_IRQHandler();
 }
 pub fn DMA() callconv(.C) void {
     //c.DMA_IRQHandler();
@@ -48,10 +54,10 @@ pub fn I2C0() callconv(.C) void {
     //c.I2C0_IRQHandler();
 }
 pub fn USB() callconv(.C) void {
-    //c.USB_IRQHandler();
+    // c.USB_IRQHandler();
 }
 pub fn TIMER0() callconv(.C) void {
-    //c.TIMER0_IRQHandler();
+    // c.TIMER0_IRQHandler();
 }
 pub fn SysTick() callconv(.C) void {
     //

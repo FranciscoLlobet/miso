@@ -11,12 +11,10 @@ const build_root = root();
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
-pub fn build(b: *std.Build) void {
-
-    // Similar to creating the run step earlier, this exposes a `test` step to
-    // the `zig build --help` menu, providing a way for the user to request
-    // running the unit tests.
-    _ = b.step("test", "Run unit tests");
+pub fn build(b: *std.Build) !void {
+    // _ = b;
+    b.modules.get("app").?.addIncludePath(b.path(build_root ++ "../../c/board/inc"));
+    b.modules.get("board").?.addIncludePath(b.path(build_root ++ "../../c/board/inc"));
 }
 
 /// Bootloader target for the EFM32GG390 chip on the XDK110 development kit.
