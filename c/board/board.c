@@ -179,17 +179,17 @@ void BOARD_Init(void)
     GPIO_PinOutSet(PWR_3V3_EN_PORT, PWR_3V3_EN_PIN);
 
     /* LED Set Group */
-//    sl_led_init(&led_red);
-//    sl_led_init(&led_orange);
-//    sl_led_init(&led_yellow);
+    sl_led_init(&led_red);
+    sl_led_init(&led_orange);
+    sl_led_init(&led_yellow);
 
-//    sl_led_turn_off(&led_red);
-//    sl_led_turn_off(&led_orange);
-//    sl_led_turn_off(&led_yellow);
+    sl_led_turn_off(&led_red);
+    sl_led_turn_off(&led_orange);
+    sl_led_turn_off(&led_yellow);
 
     /* BUTTON Set Group */
-//    sl_button_init(&button1);
-//    sl_button_init(&button2);
+    sl_button_init(&button1);
+    sl_button_init(&button2);
 
     DMADRV_Init();
 #if 0

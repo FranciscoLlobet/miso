@@ -64,6 +64,7 @@
             .path = "bsp/xdk110",
         },
         .@"miso/csrc" = .{ .path = "c" },
+        .freertos = .{ .path = "c/FreeRTOS" },
     },
 
     // Specifies the set of files and directories that are included in this package.

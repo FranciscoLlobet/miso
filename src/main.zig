@@ -21,21 +21,46 @@ const std = @import("std");
 const microzig = @import("microzig");
 
 const board = @import("miso/csrc");
+const freertos = @import("freertos");
+const leds = board.leds;
 
 pub fn main() noreturn {
     //
 
     board.init();
+    leds.yellow.on();
 
-    while (true) { //
-        // microzig.hal.leds.orange.on();
-    }
+    freertos.vTaskStartScheduler();
 
     unreachable;
 }
 
 pub fn init() void {
     // SystemInit();
+}
+
+export fn vApplicationIdleHook() void {
+    //  board.watchdogFeed();
+}
+
+export fn vApplicationDaemonTaskStartupHook() void {
+    // appStart();
+}
+
+export fn vApplicationStackOverflowHook() noreturn {
+    microzig.hang();
+}
+
+export fn vApplicationMallocFailedHook() noreturn {
+    microzig.hang();
+}
+
+export fn vApplicationTickHook() void {
+    //
+}
+
+export fn hang() callconv(.C) void {
+    microzig.hang();
 }
 
 pub fn GPIO_EVEN() callconv(.C) void {
@@ -60,13 +85,8 @@ pub fn TIMER0() callconv(.C) void {
     // c.TIMER0_IRQHandler();
 }
 pub fn SysTick() callconv(.C) void {
-    //
+    freertos.xPortSysTickHandler();
 }
-/// Redirecting the PendSV to the FreeRTOS handler
-//pub const PendSV = xPortPendSVHandler;
-
-/// Redirecting the SVCall to the FreeRTOS handler
-//pub const SVCall = vPortSVCHandler;
 
 pub fn HardFault() callconv(.C) void {
     microzig.hang(); //c_board.BOARD_MCU_Reset();
@@ -99,5 +119,7 @@ pub const microzig_options = .{
         .USB = Handler{ .C = USB },
         .TIMER0 = Handler{ .C = TIMER0 },
         .SysTick = Handler{ .C = SysTick },
+        .PendSV = Handler{ .Naked = freertos.xPortPendSVHandler },
+        .SVCall = Handler{ .Naked = freertos.vPortSVCHandler },
     },
 };

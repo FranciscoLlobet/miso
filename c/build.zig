@@ -20,7 +20,6 @@ pub fn build(b: *std.Build) void {
 
     const lib = b.addStaticLibrary(.{
         .name = "csrc", // Board support package
-        //.root_source_file = b.path("src/board.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -49,9 +48,14 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+  
+
     board_module.addIncludePath(b.path("board/inc"));
+  //  leds_module.addIncludePath(b.path("board/inc"));
+
     for (gecko_include_path) |p| {
         board_module.addIncludePath(b.path(p));
+    //    leds_module.addIncludePath(b.path(p));
     }
 
     lib.installHeader(b.path("board/inc/board.h"), "board.h");
@@ -212,4 +216,6 @@ const board_source_paths = [_][]const u8{
     board_base_dir ++ "/system_efm32gg.c",
     board_base_dir ++ "/stdio.c",
     board_base_dir ++ "/board.c",
+    board_base_dir ++ "/board_leds.c",
+    board_base_dir ++ "/board_buttons.c",
 };

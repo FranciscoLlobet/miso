@@ -51,7 +51,7 @@
         },
         {
             "cwd": "${workspaceRoot}",
-            "executable": "${workspaceRoot}/zig-out/firmware/bootloader.elf",
+            "executable": "${workspaceRoot}/zig-out/firmware/EFM32GG390.elf",
             "name": "Boot",
             "request": "launch",
             "type": "cortex-debug",
