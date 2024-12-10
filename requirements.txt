@@ -1,0 +1,6 @@
+ziglang==0.13.0
+pyyaml
+ninja
+meson
+invoke
+doit
