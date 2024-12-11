@@ -2,3 +2,15 @@
 	path = c/FreeRTOS/FreeRTOS-Kernel
 	url = https://github.com/FranciscoLlobet/FreeRTOS-Kernel.git
 
+[submodule "c/jsmn/jsmn"]
+	path = c/jsmn/jsmn
+	url = https://github.com/FranciscoLlobet/jsmn.git
+[submodule "c/picohttpparser/picohttpparser"]
+	path = c/picohttpparser/picohttpparser
+	url = https://github.com/FranciscoLlobet/picohttpparser.git
+[submodule "c/mqtt/paho.mqtt.embedded-c"]
+	path = c/mqtt/paho.mqtt.embedded-c
+	url = https://github.com/FranciscoLlobet/paho.mqtt.embedded-c.git
+[submodule "c/mbedTLS/mbedtls"]
+	path = c/mbedTLS/mbedtls
+	url = https://github.com/FranciscoLlobet/mbedtls.git
