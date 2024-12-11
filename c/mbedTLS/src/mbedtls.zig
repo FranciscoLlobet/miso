@@ -401,7 +401,7 @@ pub fn TlsContext(comptime T: type, comptime connType: type, comptime mode: conn
             }
         }
         pub fn deinit(self: *@This()) i32 {
-            var ret: i32 = 0;
+            const ret: i32 = 0;
 
             self.cleanup();
 
