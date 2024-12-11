@@ -23,6 +23,8 @@
     // Once all dependencies are fetched, `zig build` no longer requires
     // internet connectivity.
     .dependencies = .{
+        //.simplelink = .{ .path = "simplelink" },
+        //.freertos = .{ .path = "freertos" },
         //    .path = "foo",
     },
     .paths = .{

@@ -63,27 +63,6 @@ export fn hang() callconv(.C) void {
     microzig.hang();
 }
 
-pub fn GPIO_EVEN() callconv(.C) void {
-    //c.GPIO_EVEN_IRQHandler();
-}
-pub fn GPIO_ODD() callconv(.C) void {
-    // c.GPIO_ODD_IRQHandler();
-}
-pub fn RTC() callconv(.C) void {
-    // c.RTC_IRQHandler();
-}
-pub fn DMA() callconv(.C) void {
-    //c.DMA_IRQHandler();
-}
-pub fn I2C0() callconv(.C) void {
-    //c.I2C0_IRQHandler();
-}
-pub fn USB() callconv(.C) void {
-    // c.USB_IRQHandler();
-}
-pub fn TIMER0() callconv(.C) void {
-    // c.TIMER0_IRQHandler();
-}
 pub fn SysTick() callconv(.C) void {
     freertos.xPortSysTickHandler();
 }
@@ -111,13 +90,13 @@ pub const microzig_options = .{
         .MemManageFault = Handler{ .C = MemManageFault },
         .BusFault = Handler{ .C = BusFault },
         .UsageFault = Handler{ .C = UsageFault },
-        .GPIO_EVEN = Handler{ .C = GPIO_EVEN },
-        .GPIO_ODD = Handler{ .C = GPIO_ODD },
-        .RTC = Handler{ .C = RTC },
-        .DMA = Handler{ .C = DMA },
-        .I2C0 = Handler{ .C = I2C0 },
-        .USB = Handler{ .C = USB },
-        .TIMER0 = Handler{ .C = TIMER0 },
+        .GPIO_EVEN = Handler{ .C = board.GPIO_EVEN_IRQHandler },
+        .GPIO_ODD = Handler{ .C = board.GPIO_ODD_IRQHandler },
+        .RTC = Handler{ .C = board.RTC_IRQHandler },
+        .DMA = Handler{ .C = board.DMA_IRQHandler },
+        .I2C0 = Handler{ .C = board.I2C0_IRQHandler },
+        .USB = Handler{ .C = board.USB_IRQHandler },
+        .TIMER0 = Handler{ .C = board.TIMER0_IRQHandler },
         .SysTick = Handler{ .C = SysTick },
         .PendSV = Handler{ .Naked = freertos.xPortPendSVHandler },
         .SVCall = Handler{ .Naked = freertos.vPortSVCHandler },

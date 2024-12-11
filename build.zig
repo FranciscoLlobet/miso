@@ -34,18 +34,31 @@ pub fn build(b: *std.Build) void {
 
         //fw.add_app_import(name: []const u8, module: *Build.Module, options: AppDependencyOptions)
         fw.add_app_import("miso/csrc", package.module("board"), .{});
-        //fw.add_app_import("leds", package.module("leds"), .{});
 
         // Link towards the C-Src artifact
-        fw.add_object_file(package.artifact("csrc").getEmittedBin());
+        fw.add_object_file(package.artifact("board").getEmittedBin());
 
+        // FreeRTOS
         const freertos_package = b.dependency("freertos", .{ .optimize = optimize });
         const freertos = freertos_package.module("freertos");
         fw.add_app_import("freertos", freertos, .{});
         fw.add_object_file(freertos_package.artifact("freertos").getEmittedBin());
 
+        // FatFS
+        const fatfs_package = b.dependency("fatfs", .{ .optimize = optimize });
+        const fatfs = fatfs_package.module("fatfs");
+        fw.add_app_import("fatfs", fatfs, .{});
+        fw.add_object_file(fatfs_package.artifact("fatfs").getEmittedBin());
+
+        // SimpleLink
+        const simplelink_package = b.dependency("simplelink", .{ .optimize = optimize });
+        const simplelink = simplelink_package.module("simplelink");
+        fw.add_app_import("simplelink", simplelink, .{});
+        fw.add_object_file(simplelink_package.artifact("simplelink").getEmittedBin());
+
         // Adding precompiled Lib-C
         fw.add_object_file(b.path("picolibc/clang-compiled/picolibc/libc.a"));
+        fw.add_object_file(b.path("c/ext/gecko_sdk/platform/emdrv/nvm3/lib/libnvm3_CM3_gcc.a"));
 
         // This will also install into `$prefix/firmware` instead of `$prefix/bin`.
         mb.install_firmware(fw, .{ .format = .bin });

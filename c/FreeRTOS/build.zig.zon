@@ -5,7 +5,9 @@
     // In a future version of Zig it will be used for package deduplication.
     .version = "0.0.0",
 
-    .dependencies = .{},
+    .dependencies = .{
+        .board = .{ .path = "../" },
+    },
 
     // Specifies the set of files and directories that are included in this package.
     // Only files and directories listed here are included in the `hash` that

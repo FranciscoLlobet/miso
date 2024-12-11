@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const lib = b.addStaticLibrary(.{
-        .name = "csrc", // Board support package
+        .name = "board", // Board support package
         .target = target,
         .optimize = optimize,
     });
@@ -28,6 +28,13 @@ pub fn build(b: *std.Build) void {
     lib.addIncludePath(b.path(board_base_dir ++ "/inc"));
 
     lib.addIncludePath(b.path("config"));
+    lib.installHeadersDirectory(b.path("board/inc"), "board/include", .{});
+    lib.installHeadersDirectory(b.path("config"), "config/include", .{});
+    lib.installHeadersDirectory(b.path("../picolibc/clang-compiled/picolibc/include"), "picolib/include", .{});
+
+    //const simplelink = b.dependency("simplelink", .{});
+
+    //lib.addIncludePath(simplelink.artifact("simplelink").getEmittedIncludeTree().path(b, "simplelink/include"));
 
     for (gecko_include_path) |p| {
         lib.addIncludePath(b.path(p));
@@ -48,17 +55,14 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-  
-
     board_module.addIncludePath(b.path("board/inc"));
-  //  leds_module.addIncludePath(b.path("board/inc"));
+    //  leds_module.addIncludePath(b.path("board/inc"));
 
     for (gecko_include_path) |p| {
         board_module.addIncludePath(b.path(p));
-    //    leds_module.addIncludePath(b.path(p));
     }
 
-    lib.installHeader(b.path("board/inc/board.h"), "board.h");
+    //lib.addObjectFile(b.path("ext/gecko_sdk/platform/emdrv/nvm3/lib/libnvm3_CM3_gcc.a"));
 
     board_module.addSystemIncludePath(b.path("../picolibc/clang-compiled/picolibc/include"));
     board_module.addIncludePath(b.path("config"));
@@ -98,6 +102,13 @@ const gecko_include_path = [_][]const u8{
     gecko_sdk_base_dir ++ "/service/power_manager/inc",
     gecko_sdk_base_dir ++ "/middleware/usb_gecko/inc",
     gecko_sdk_base_dir ++ "/middleware/usbxpress/inc/",
+
+    "FatFs/ff15/source",
+    "FreeRTOS/FreeRTOS-Kernel/include",
+    "FreeRTOS/FreeRTOS-Kernel/portable/GCC/ARM_CM3",
+    "SimpleLink/cc3100-sdk/simplelink/include",
+    "Simplelink/cc3100-sdk/oslib",
+    "Simplelink/cc3100-sdk/netapps",
 };
 
 const gecko_sdk_source_paths = [_][]const u8{
@@ -218,4 +229,8 @@ const board_source_paths = [_][]const u8{
     board_base_dir ++ "/board.c",
     board_base_dir ++ "/board_leds.c",
     board_base_dir ++ "/board_buttons.c",
+    board_base_dir ++ "/ffsystem.c",
+    board_base_dir ++ "/board_sd_card.c",
+    board_base_dir ++ "/board_i2c_sensors.c",
+    board_base_dir ++ "/board_CC3100.c",
 };

@@ -43,6 +43,7 @@
  */
 
 #include "board.h"
+#include "board_sdcard.h"
 // #include "simplelink.h"
 
 //#include "board_sd_card.h"
@@ -192,10 +193,12 @@ void BOARD_Init(void)
     sl_button_init(&button2);
 
     DMADRV_Init();
-#if 0
+
     /* Initialize SPI peripherals */
     BOARD_SD_Card_Init();
+
     Board_CC3100_Init();
+#if 0
     BOARD_EM9301_Init();
 
     /* Initialize I2C peripheral */

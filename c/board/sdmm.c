@@ -29,6 +29,7 @@ MODIFICATIONS:
 /*-------------------------------------------------------------------------*/
 
 #include "board.h"
+#include "board_sdcard.h"
 
 #define CS_H()        BOARD_SD_CARD_Deselect()
 #define CS_L()        BOARD_SD_CARD_Select()

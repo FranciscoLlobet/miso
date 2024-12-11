@@ -65,6 +65,9 @@
         },
         .@"miso/csrc" = .{ .path = "c" },
         .freertos = .{ .path = "c/FreeRTOS" },
+        .fatfs = .{ .path = "c/FatFs" },
+        .simplelink = .{ .path = "c/SimpleLink" },
+        .mbedtls = .{ .path = "c/mbedTLS" },
     },
 
     // Specifies the set of files and directories that are included in this package.

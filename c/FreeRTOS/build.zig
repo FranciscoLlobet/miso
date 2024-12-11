@@ -23,15 +23,10 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const lib = b.addStaticLibrary(.{
-        .name = "freertos", // Board support package
+        .name = "freertos", // freertos
         .target = target,
         .optimize = optimize,
     });
-
-    //lib.addSystemIncludePath(b.path(include_path));
-    //lib.addIncludePath(b.path(board_base_dir ++ "/inc"));
-
-    //    lib.addIncludePath(b.path("config"));
 
     for (source_paths) |p| {
         lib.addCSourceFile(.{ .file = b.path(p), .flags = &c_flags });
@@ -41,8 +36,10 @@ pub fn build(b: *std.Build) void {
         lib.addIncludePath(b.path(p));
     }
 
-    lib.addIncludePath(b.path("../config"));
-    lib.addSystemIncludePath(b.path("../../picolibc/clang-compiled/picolibc/include"));
+    const board = b.dependency("board", .{});
+
+    lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "config/include"));
+    lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "picolib/include"));
 
     // Process modules
     const board_module = b.addModule("freertos", .{
@@ -51,15 +48,15 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    board_module.addIncludePath(b.path("../config"));
+    board_module.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "config/include"));
+    board_module.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "picolib/include"));
+
     for (include_path) |p| {
         board_module.addIncludePath(b.path(p));
     }
 
-    //lib.installHeader(b.path("board/inc/board.h"), "board.h");
-
-    board_module.addSystemIncludePath(b.path("../../picolibc/clang-compiled/picolibc/include"));
-    //board_module.addIncludePath(b.path("config"));
+    lib.installHeadersDirectory(b.path("FreeRTOS-Kernel/include"), "freertos/include", .{});
+    lib.installHeadersDirectory(b.path("FreeRTOS-Kernel/portable/GCC/ARM_CM3"), "freertos/include", .{});
 
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when

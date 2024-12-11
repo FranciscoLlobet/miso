@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------/
 /  Configurations of FatFs Module
 /---------------------------------------------------------------------------*/
-#include "board.h"
+#include "board_sdcard.h"
 
 
 #define FFCONF_DEF	80286	/* Revision ID */
