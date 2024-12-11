@@ -19,7 +19,7 @@
 
 const std = @import("std");
 const connection = @import("connection.zig");
-const c = @cImport({
+pub const c = @cImport({
     @cDefine("MBEDTLS_CONFIG_FILE", "\"miso_mbedtls_config.h\"");
     @cInclude("mbedtls/ctr_drbg.h");
     @cInclude("mbedtls/timing.h");
