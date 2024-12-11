@@ -46,7 +46,6 @@ pub fn build(b: *std.Build) void {
     lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "config/include"));
     lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "board/include"));
     lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "picolib/include"));
-    //lib.addSystemIncludePath(b.path("../../picolibc/clang-compiled/picolibc/include"));
 
     // Process modules
     const board_module = b.addModule("simplelink", .{
@@ -55,19 +54,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    board_module.addIncludePath(b.path("../config"));
+    board_module.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "config/include"));
     for (include_path) |p| {
         board_module.addIncludePath(b.path(p));
     }
 
-    //lib.installHeader(b.path("board/inc/board.h"), "board.h");
-
-    //board_module.addSystemIncludePath(b.path("../../picolibc/clang-compiled/picolibc/include"));
-    //board_module.addIncludePath(b.path("config"));
-
-    // This declares intent for the library to be installed into the standard
-    // location when the user invokes the "install" step (the default step when
-    // running `zig build`).
     b.installArtifact(lib);
 }
 

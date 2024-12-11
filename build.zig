@@ -56,6 +56,12 @@ pub fn build(b: *std.Build) void {
         fw.add_app_import("simplelink", simplelink, .{});
         fw.add_object_file(simplelink_package.artifact("simplelink").getEmittedBin());
 
+        // Picohttpparser
+        const picohttpparser_package = b.dependency("picohttpparser", .{ .optimize = optimize });
+        const picohttpparser = picohttpparser_package.module("picohttpparser");
+        fw.add_app_import("picohttpparser", picohttpparser, .{});
+        fw.add_object_file(picohttpparser_package.artifact("picohttpparser").getEmittedBin());
+
         // Adding precompiled Lib-C
         fw.add_object_file(b.path("picolibc/clang-compiled/picolibc/libc.a"));
         fw.add_object_file(b.path("c/ext/gecko_sdk/platform/emdrv/nvm3/lib/libnvm3_CM3_gcc.a"));
