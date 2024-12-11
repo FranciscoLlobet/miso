@@ -14,3 +14,6 @@
 [submodule "c/mbedTLS/mbedtls"]
 	path = c/mbedTLS/mbedtls
 	url = https://github.com/FranciscoLlobet/mbedtls.git
+[submodule "c/ext/gecko_sdk"]
+	path = c/ext/gecko_sdk
+	url = https://github.com/FranciscoLlobet/gecko_sdk.git
