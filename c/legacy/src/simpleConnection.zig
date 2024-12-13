@@ -18,8 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 const std = @import("std");
-const board = @import("microzig").board;
-const freertos = @import("freertos.zig");
+//const board = @import("microzig").board;
+const freertos = @import("freertos");
 const c = @cImport({
     @cInclude("simplelink.h");
 });

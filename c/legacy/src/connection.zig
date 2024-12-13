@@ -17,8 +17,8 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 const std = @import("std");
-const freertos = @import("freertos.zig");
-const config = @import("config.zig");
+const freertos = @import("freertos");
+//const config = @import("config.zig");
 
 const c = @cImport({
     @cInclude("network.h");
@@ -204,7 +204,7 @@ fn run(self: *@This()) noreturn {
     while (true) {
         // Start the loop
         var read_set_ptr: ?*c.SlFdSet_t = null;
-        var write_set_ptr: ?*c.SlFdSet_t = null;
+        const write_set_ptr: ?*c.SlFdSet_t = null;
         var nfsd: i16 = -1;
         var maintenance: usize = 0;
 
