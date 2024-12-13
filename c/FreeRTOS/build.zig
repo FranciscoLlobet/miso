@@ -41,19 +41,22 @@ pub fn build(b: *std.Build) void {
     lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "config/include"));
     lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "picolib/include"));
 
+    //const microzig = b.dependency("microzig", .{});
+
     // Process modules
-    const board_module = b.addModule("freertos", .{
+    const freertos_module = b.addModule("freertos", .{
         .root_source_file = b.path("src/freertos.zig"),
         .target = target,
         .optimize = optimize,
     });
 
-    board_module.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "config/include"));
-    board_module.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "picolib/include"));
+    freertos_module.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "config/include"));
+    freertos_module.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "picolib/include"));
 
     for (include_path) |p| {
-        board_module.addIncludePath(b.path(p));
+        freertos_module.addIncludePath(b.path(p));
     }
+    //freertos_module.addImport("microzig", microzig.module("microzig"));
 
     lib.installHeadersDirectory(b.path("FreeRTOS-Kernel/include"), "freertos/include", .{});
     lib.installHeadersDirectory(b.path("FreeRTOS-Kernel/portable/GCC/ARM_CM3"), "freertos/include", .{});

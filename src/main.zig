@@ -20,15 +20,32 @@
 const std = @import("std");
 const microzig = @import("microzig");
 
-const board = @import("miso/csrc");
+const board = @import("board");
 const freertos = @import("freertos");
 const leds = board.leds;
+const legacy = @import("legacy");
+const nvm = legacy.nvm;
+const c = legacy.c;
+const network = legacy.network;
+
+// Enable or Disable features at compile time
+pub const enable_lwm2m = false;
+pub const enable_mqtt = true;
+pub const enable_http = true;
+
+/// Export the NVM3 handle
+pub export const miso_nvm3_handle = &nvm.miso_nvm3;
+pub export const miso_nvm3_init_handle = &nvm.miso_nvm3_init;
 
 pub fn main() noreturn {
     //
+    const appCounter: u32 = nvm.incrementAppCounter() catch 0;
 
     board.init();
-    leds.yellow.on();
+
+    network.start();
+
+    _ = c.printf("--- MISO starting FreeRTOS %d---\n\r", appCounter);
 
     freertos.vTaskStartScheduler();
 
@@ -44,7 +61,27 @@ export fn vApplicationIdleHook() void {
 }
 
 export fn vApplicationDaemonTaskStartupHook() void {
-    // appStart();
+    leds.red.on();
+
+    board.msDelay(500);
+
+    leds.orange.on();
+
+    board.msDelay(500);
+
+    leds.yellow.on();
+
+    board.msDelay(500);
+
+    leds.red.off();
+
+    board.msDelay(500);
+
+    leds.orange.off();
+
+    board.msDelay(500);
+
+    leds.yellow.off();
 }
 
 export fn vApplicationStackOverflowHook() noreturn {
@@ -59,12 +96,18 @@ export fn vApplicationTickHook() void {
     //
 }
 
+export fn vApplicationGetRandomHeapCanary(pxHeapCanary: [*c]u32) void {
+    pxHeapCanary.* = @as(u32, 0xdeadbeef);
+}
+
 export fn hang() callconv(.C) void {
     microzig.hang();
 }
 
 pub fn SysTick() callconv(.C) void {
-    freertos.xPortSysTickHandler();
+    if (.taskSCHEDULER_NOT_STARTED != freertos.xTaskGetSchedulerState()) {
+        freertos.xPortSysTickHandler();
+    }
 }
 
 pub fn HardFault() callconv(.C) void {

@@ -63,8 +63,8 @@
 #include "sl_device_init_nvic.h"
 
 /* FreeRTOS */
-//#include "FreeRTOS.h"
-//#include "task.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 /* */
 
@@ -86,14 +86,14 @@ void BOARD_usDelay(uint32_t delay_in_us) { sl_udelay_wait((unsigned)delay_in_us)
 
 void BOARD_msDelay(uint32_t delay_in_ms)
 {
-    //if (taskSCHEDULER_RUNNING == xTaskGetSchedulerState())
-    //{
-   //     vTaskDelay(delay_in_ms);
-    //}
-    //else
-    //{
+    if (taskSCHEDULER_RUNNING == xTaskGetSchedulerState())
+    {
+        vTaskDelay(delay_in_ms);
+    }
+    else
+    {
         sl_sleeptimer_delay_millisecond(delay_in_ms);
-    //}
+    }
 }
 
 #if (MISO_APPLICATION)

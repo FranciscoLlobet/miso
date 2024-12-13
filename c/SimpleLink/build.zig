@@ -42,6 +42,8 @@ pub fn build(b: *std.Build) void {
         lib.installHeadersDirectory(b.path(p), "simplelink/include", .{});
     }
 
+    lib.installHeadersDirectory(b.path("cc3100-sdk/simplelink/source"), "simplelink/source", .{});
+
     lib.addIncludePath(freertos.artifact("freertos").getEmittedIncludeTree().path(b, "freertos/include"));
     lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "config/include"));
     lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "board/include"));

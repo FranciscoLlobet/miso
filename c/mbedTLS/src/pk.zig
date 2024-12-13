@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 const std = @import("std");
-//const freertos = @import("freertos.zig");
 const c = @cImport({
     @cDefine("MBEDTLS_CONFIG_FILE", "\"miso_mbedtls_config.h\"");
     @cInclude("board.h");

@@ -63,12 +63,15 @@
         .@"bsp/xdk110" = .{
             .path = "bsp/xdk110",
         },
-        .@"miso/csrc" = .{ .path = "c" },
-        .freertos = .{ .path = "c/FreeRTOS" },
+        .board = .{ .path = "c" },
         .fatfs = .{ .path = "c/FatFs" },
         .simplelink = .{ .path = "c/SimpleLink" },
         .mbedtls = .{ .path = "c/mbedTLS" },
         .picohttpparser = .{ .path = "c/picohttpparser" },
+        .legacy = .{ .path = "c/legacy" },
+        .freertos = .{
+            .path = "c/FreeRTOS",
+        },
     },
 
     // Specifies the set of files and directories that are included in this package.

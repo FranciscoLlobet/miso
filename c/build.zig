@@ -30,6 +30,31 @@ pub fn build(b: *std.Build) void {
     lib.addIncludePath(b.path("config"));
     lib.installHeadersDirectory(b.path("board/inc"), "board/include", .{});
     lib.installHeadersDirectory(b.path("config"), "config/include", .{});
+    lib.installHeadersDirectory(b.path("ext/gecko_sdk/platform/emlib/inc/"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path("ext/gecko_sdk/platform/Device/SiliconLabs/EFM32GG/Include"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path("ext/gecko_sdk/platform/common/inc/"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path("ext/gecko_sdk/platform/middleware/usbxpress/inc/"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/common/errno/inc/"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/emdrv/common/inc"), "emlib/include", .{});
+
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/emdrv/spidrv/inc"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/emdrv/uartdrv/inc"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/emdrv/nvm3/inc"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/driver/button/inc"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/service/iostream/inc"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/driver/leddrv/inc"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/service/udelay/inc"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/service/sleeptimer/inc"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/emdrv/gpiointerrupt/inc"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/emdrv/dmadrv/inc"), "emlib/include", .{});
+    lib.installHeadersDirectory(b.path(gecko_sdk_base_dir ++ "/service/power_manager/inc"), "emlib/include", .{});
+
+    //  gecko_sdk_base_dir ++ "/service/power_manager/inc",
+    // gecko_sdk_base_dir ++ "/middleware/usb_gecko/inc",
+    // gecko_sdk_base_dir ++ "/middleware/usbxpress/inc/",
+
+    lib.installHeadersDirectory(b.path("ext/gecko_sdk/platform/CMSIS/Core/Include"), "cmsis/include", .{});
+
     lib.installHeadersDirectory(b.path("../picolibc/clang-compiled/picolibc/include"), "picolib/include", .{});
 
     //const simplelink = b.dependency("simplelink", .{});

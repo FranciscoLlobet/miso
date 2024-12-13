@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 const std = @import("std");
-const cpu = @import("microzig").cpu;
+//const cpu = @import("microzig").cpu;
 pub const c = @cImport({
     @cInclude("FreeRTOS.h");
     @cInclude("task.h");
@@ -130,10 +130,10 @@ pub inline fn portYIELD_FROM_ISR(xSwitchRequired: BaseType_t) void {
 }
 
 pub inline fn portYIELD() void {
-    cpu.regs.ICSR.modify(.{ .PENDSVSET = 1 });
+    //cpu.regs.ICSR.modify(.{ .PENDSVSET = 1 });
 
-    cpu.dsb();
-    cpu.isb();
+    //cpu.dsb();
+    //cpu.isb();
 }
 
 /// Pend function call to the timer service task

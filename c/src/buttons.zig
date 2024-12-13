@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 const std = @import("std");
-//const microzig = @import("microzig");
 const board = @import("board.zig");
 const c = @cImport({
     @cInclude("board.h");

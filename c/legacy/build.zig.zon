@@ -23,12 +23,16 @@
     // Once all dependencies are fetched, `zig build` no longer requires
     // internet connectivity.
     .dependencies = .{
-        .freertos = .{ .path = "../FreeRTOS" },
+        //.freertos = .{ .path = "../FreeRTOS" },
         .fatfs = .{ .path = "../FatFs" },
         .board = .{ .path = "../" },
         .jsmn = .{ .path = "../jsmn" },
-        .simpleLink = .{ .path = "../SimpleLink" },
+        .simplelink = .{ .path = "../SimpleLink" },
         .mbedtls = .{ .path = "../mbedTLS" },
+        .freertos = .{
+            .path = "../FreeRTOS",
+            //.hash = "122039f5707c0df022b5cbe724704649f7483018472b5eb62ca24eb1c947dd901417",
+        },
     },
 
     // Specifies the set of files and directories that are included in this package.

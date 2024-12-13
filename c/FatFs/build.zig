@@ -41,6 +41,8 @@ pub fn build(b: *std.Build) void {
     lib.addIncludePath(b.path("../config"));
     lib.addSystemIncludePath(b.path("../../picolibc/clang-compiled/picolibc/include"));
 
+    lib.installHeadersDirectory(b.path("ff15/source"), "fatfs/include", .{});
+
     // Process modules
     const board_module = b.addModule("fatfs", .{
         .root_source_file = b.path("src/fatfs.zig"),

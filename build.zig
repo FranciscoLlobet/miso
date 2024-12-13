@@ -28,12 +28,12 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path(example.file),
         });
 
-        const package = b.dependency("miso/csrc", .{
+        const package = b.dependency("board", .{
             .optimize = optimize,
         });
 
         //fw.add_app_import(name: []const u8, module: *Build.Module, options: AppDependencyOptions)
-        fw.add_app_import("miso/csrc", package.module("board"), .{});
+        fw.add_app_import("board", package.module("board"), .{});
 
         // Link towards the C-Src artifact
         fw.add_object_file(package.artifact("board").getEmittedBin());
@@ -61,6 +61,12 @@ pub fn build(b: *std.Build) void {
         const picohttpparser = picohttpparser_package.module("picohttpparser");
         fw.add_app_import("picohttpparser", picohttpparser, .{});
         fw.add_object_file(picohttpparser_package.artifact("picohttpparser").getEmittedBin());
+
+        // Legacy
+        const legacy_package = b.dependency("legacy", .{ .optimize = optimize });
+        const legacy = legacy_package.module("legacy");
+        fw.add_app_import("legacy", legacy, .{});
+        fw.add_object_file(legacy_package.artifact("legacy").getEmittedBin());
 
         // Adding precompiled Lib-C
         fw.add_object_file(b.path("picolibc/clang-compiled/picolibc/libc.a"));

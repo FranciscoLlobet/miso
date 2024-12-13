@@ -1,0 +1,408 @@
+// Copyright (c) 2023-2024 Francisco Llobet-Blandino and the "Miso Project".
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the “Software”), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+const std = @import("std");
+const freertos = @import("freertos.zig");
+const config = @import("config.zig");
+
+const c = @cImport({
+    @cInclude("network.h");
+});
+
+/// Connection Errors
+pub const connection_error = error{
+    /// Create Connection Error
+    /// Could not create a connection to the host
+    create_error,
+
+    /// DNS error (peer not found)
+    dns,
+    /// Unavailable socket
+    socket,
+    /// Connect error
+    connect,
+
+    /// SSL Init error
+    ssl_init_error,
+
+    /// Close Connection Error
+    close_error,
+
+    /// Send Error
+    send_error,
+
+    /// Recieve Error
+    recieve_error,
+
+    /// Possible buffer overflow
+    buffer_owerflow,
+};
+
+/// Network Context from C
+const network_ctx = c.miso_network_ctx_t;
+
+/// Protocol Bit
+const protocol_bit: u32 = (1 << 0);
+/// Select TCP or UDP
+const udp_tcp_bit: u32 = (1 << 1);
+/// Select IP4 or IP6
+const ip4_ip6_bit: u32 = (1 << 2);
+/// Select if the connection is secure
+const secure_bit: u32 = (1 << 3);
+
+/// New protocol Enum
+pub const proto = enum(u32) {
+    no_protocol = 0,
+    udp_ip4 = protocol_bit | udp_tcp_bit,
+    tcp_ip4 = protocol_bit,
+    udp_ip6 = protocol_bit | ip4_ip6_bit | udp_tcp_bit,
+    tcp_ip6 = protocol_bit | ip4_ip6_bit,
+    dtls_ip4 = protocol_bit | secure_bit | udp_tcp_bit,
+    tls_ip4 = protocol_bit | secure_bit,
+    dtls_ip6 = protocol_bit | secure_bit | ip4_ip6_bit | udp_tcp_bit,
+    tls_ip6 = protocol_bit | secure_bit | ip4_ip6_bit,
+
+    /// Is the protocol secure
+    pub fn isSecure(self: @This()) bool {
+        return (@intFromEnum(self) & secure_bit) != 0;
+    }
+    /// Is the protocol IP6
+    pub fn isIp6(self: @This()) bool {
+        return (@intFromEnum(self) & ip4_ip6_bit) != 0;
+    }
+    /// Is the protocol TCP
+    pub fn isTcp(self: @This()) bool {
+        return (@intFromEnum(self) & udp_tcp_bit) == 0;
+    }
+    /// Is the protocol UDP
+    pub fn isUdp(self: @This()) bool {
+        return (@intFromEnum(self) & udp_tcp_bit) != 0;
+    }
+    /// Is the protocol DTLS
+    pub fn isDtls(self: @This()) bool {
+        return self.isSecure() and self.isUdp();
+    }
+    /// Is the protocol TLS
+    pub fn isTls(self: @This()) bool {
+        return self.isSecure() and self.isTcp();
+    }
+    pub fn isStream(self: @This()) bool {
+        return self.isTcp();
+    }
+};
+
+pub const EAGAIN: isize = -11;
+
+/// Security Mode Enumerations
+///
+pub const security_mode = enum(u32) {
+    /// No security
+    no_sec = c.miso_security_mode_none,
+    /// Pre-Shared Key
+    psk = c.miso_security_mode_psk,
+    /// Certificate EC
+    certificate_ec = c.miso_security_mode_ec,
+    /// Certificate RSA
+    certificate_rsa = c.miso_security_mode_rsa,
+};
+
+pub const schemes = enum(u32) {
+    no_scheme = 0,
+    // Unsecured schemes
+    ntp = 1,
+    http = 2,
+    mqtt = 3,
+    coap = 4,
+    // Secured schemes
+    https = 2 + 16,
+    mqtts = 3 + 16,
+    coaps = 4 + 16,
+
+    const stringmap = std.ComptimeStringMap(@This(), .{ .{ "ntp", .ntp }, .{ "http", .http }, .{ "https", .https }, .{ "mqtt", .mqtt }, .{ "mqtts", .mqtts }, .{ "coap", .coap }, .{ "coaps", .coaps } });
+
+    pub fn match(scheme: []const u8) ?@This() {
+        return stringmap.get(scheme);
+    }
+
+    /// Get the underlying protocol for the proposed scheme
+    pub fn getProtocol(self: @This()) proto {
+        return switch (self) {
+            .ntp, .coap => .udp_ip4,
+            .coaps => .dtls_ip4,
+            .http, .mqtt => .tcp_ip4,
+            .https, .mqtts => .tls_ip4,
+            else => .no_protocol,
+        };
+    }
+
+    /// Test if the scheme is secure
+    /// Note: This function is currently not used
+    pub fn isSecure(self: @This()) bool {
+        return self.getProtocol().isSecure();
+    }
+};
+
+pub fn Connection(comptime sslType: type) type {
+    // Compile time checks
+    if (sslType != void) {
+        if (!@hasDecl(sslType, "init")) {
+            @compileError("SSL Type must have an init function");
+        }
+        if (!@hasDecl(sslType, "deinit")) {
+            @compileError("SSL Type must have a deinit function");
+        }
+    }
+    return struct {
+        ssl: sslType,
+
+        /// Initialize the connection
+        pub fn init(self: *@This()) void {
+            _ = self;
+        }
+        pub fn open(self: *@This(), uri: std.Uri, local_port: ?u16) !void {
+            try self.ssl.open(uri, local_port);
+        }
+        pub fn close(self: *@This()) !void {
+            try self.ssl.close();
+        }
+        pub fn send(self: *@This(), buffer: []const u8) !usize {
+            return self.ssl.send(buffer);
+        }
+        pub fn recieve(self: *@This(), buffer: []u8) ![]u8 {
+            return self.ssl.recieve(buffer);
+        }
+        pub fn waitRx(self: *@This(), timeout_s: u32) !bool {
+            return self.ssl.waitRx(timeout_s);
+        }
+    };
+}
+
+fn run(self: *@This()) noreturn {
+    var read_fd_set: c.SlFdSet_t = undefined;
+    var write_fd_set: c.SlFdSet_t = undefined;
+
+    c.SL_FD_ZERO(&read_fd_set);
+    c.SL_FD_ZERO(&write_fd_set);
+
+    self.mutex.give() catch {};
+
+    while (true) {
+        // Start the loop
+        var read_set_ptr: ?*c.SlFdSet_t = null;
+        var write_set_ptr: ?*c.SlFdSet_t = null;
+        var nfsd: i16 = -1;
+        var maintenance: usize = 0;
+
+        c.SL_FD_ZERO(&read_fd_set);
+        c.SL_FD_ZERO(&write_fd_set);
+
+        const current_time = freertos.xTaskGetTickCount();
+
+        // Go through the connection list
+        for (&self.connections) |*conn| {
+            if (conn.sd >= 0) {
+                if (conn.rx_queue.recieve(0)) |msg| {
+                    if ((msg.deadline > conn.rx_wait_deadline_ms) or (msg.deadline == 0)) {
+                        conn.rx_wait_deadline_ms = msg.deadline;
+                    }
+                }
+                if (conn.tx_queue.recieve(0)) |msg| {
+                    if ((msg.deadline > conn.tx_wait_deadline_ms) or (msg.deadline == 0)) {
+                        conn.tx_wait_deadline_ms = msg.deadline;
+                    }
+                }
+
+                if ((conn.rx_wait_deadline_ms == 0)) {
+                    if (self.mutex.take(null) catch unreachable) {
+                        conn.sd = -1; // Invalidate the connection
+                        self.mutex.give() catch unreachable;
+                    }
+                    maintenance += 1; // Go for another loop if there are no more deadlines
+                } else if (conn.rx_wait_deadline_ms >= current_time) {
+                    c.SL_FD_SET(conn.sd, &read_fd_set);
+                    if (nfsd < conn.sd) {
+                        nfsd = conn.sd;
+                    }
+                    read_set_ptr = &read_fd_set;
+                } else {
+                    conn.rx_wait_deadline_ms = 0; // reset deadline
+                    const msg: timeout_resp = .{ .timeout = 0 };
+                    conn.rx_signal.send(&msg, null) catch {};
+                    maintenance += 1; // Go for another loop if there are no more deadlines
+                }
+            }
+        }
+
+        if ((read_set_ptr != null) or (write_set_ptr != null)) {
+            var tv = c.SlTimeval_t{ .tv_sec = 0, .tv_usec = 0 };
+
+            const res = c.sl_Select(nfsd + 1, read_set_ptr, write_set_ptr, null, &tv);
+
+            if (res > 0) {
+                if (read_set_ptr) |read_set| {
+                    for (&self.connections) |*conn| {
+                        if (conn.sd >= 0) {
+                            if (1 == c.SL_FD_ISSET(conn.sd, read_set)) {
+                                conn.rx_wait_deadline_ms = 0; // reset deadline
+
+                                const msg: timeout_resp = .{ .timeout = 1 };
+
+                                conn.rx_signal.send(&msg, null) catch {};
+                            } else {
+                                // Do nothing
+                            }
+                        }
+                    }
+                }
+            } else if (res == 0) {
+                // Select returned without any events
+                self.task.delayTask(50);
+            } else {
+                // Error
+                _ = c.printf("Select ERROR\n\r");
+            }
+        } else if (maintenance != 0) {
+            // do nothing
+        } else {
+            // no deadlines
+            if (self.task.waitForNotify(0, 0xFFFFFFFF, null)) |_| {
+                // Do something
+            } else |_| {
+                // Do nothing
+            }
+        }
+        // Do something
+    }
+}
+
+const timeout_msg = struct {
+    deadline: u32,
+};
+
+const timeout_resp = struct {
+    timeout: u32,
+};
+
+const connectionManagerElement = struct {
+    sd: i16 = -1,
+    rx_wait_deadline_ms: u32 = 0,
+    tx_wait_deadline_ms: u32 = 0,
+    rx_signal: freertos.StaticQueue(timeout_resp, 1),
+    tx_signal: freertos.StaticBinarySemaphore(),
+    rx_queue: freertos.StaticQueue(timeout_msg, 1),
+    tx_queue: freertos.StaticQueue(timeout_msg, 1),
+
+    pub fn init(self: *@This()) void {
+        self.sd = -1;
+        self.rx_wait_deadline_ms = 0;
+        self.tx_wait_deadline_ms = 0;
+        self.rx_signal.create() catch unreachable;
+        self.tx_signal.create() catch unreachable;
+        self.rx_queue.create() catch unreachable;
+        self.tx_queue.create() catch unreachable;
+    }
+};
+
+task: freertos.StaticTask(@This(), 1200, "select_task", run),
+mutex: freertos.StaticMutex(),
+connections: [4]connectionManagerElement = undefined,
+
+/// Look if socket is already in the pool
+fn findSocket(self: *@This(), sd: i16) ?*connectionManagerElement {
+    for (&self.connections) |*conn| {
+        if (conn.sd == sd) {
+            return conn;
+        }
+    }
+    return null;
+}
+
+/// Look for the first free position in the pool
+fn findFreeSocket(self: *@This(), sd: i16) ?*connectionManagerElement {
+    for (&self.connections) |*conn| {
+        if (conn.sd < 0) {
+            if (self.mutex.take(null) catch unreachable) {
+                conn.sd = sd;
+                self.mutex.give() catch unreachable;
+            }
+            return conn;
+        }
+    }
+    return null;
+}
+
+pub fn initializeConnectionsManager(self: *@This()) void {
+    for (&self.connections) |*conn| {
+        conn.init();
+    }
+}
+
+pub fn init(self: *@This()) !void {
+    try self.task.create(self, 4);
+    try self.mutex.create();
+    self.initializeConnectionsManager();
+    self.task.suspendTask();
+}
+
+pub fn wait_rx(self: *@This(), sd: i16, timeout_s: u32) !bool {
+    const deadline_ms: u32 = @as(u32, freertos.xTaskGetTickCount()) + (timeout_s * 1024);
+    const msg: timeout_msg = .{ .deadline = deadline_ms };
+
+    // Find a connection in the pool.
+    var conn: *connectionManagerElement = self.findSocket(sd) orelse (self.findFreeSocket(sd) orelse unreachable);
+
+    conn.rx_signal.reset();
+
+    try conn.rx_queue.send(&msg, null);
+
+    self.task.notify(1, .eIncrement) catch {};
+
+    if (conn.rx_signal.recieve(null)) |resp| {
+        if (1 == resp.timeout) {
+            return true;
+        } else {
+            // _ = c.printf("Deadline missed: %d\n\r", freertos.xTaskGetTickCount() - deadline_ms);
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+pub var connectionManager: @This() = undefined;
+
+/// Handle the mbedtls threading
+extern fn miso_mbedtls_set_treading_alt() callconv(.C) void;
+
+export fn create_network_mediator() callconv(.C) c_int {
+    connectionManager.init() catch unreachable;
+    miso_mbedtls_set_treading_alt();
+    return 0;
+}
+
+export fn suspend_network_mediator() callconv(.C) void {
+    connectionManager.task.suspendTask();
+}
+
+export fn resume_network_mediator() callconv(.C) void {
+    connectionManager.task.resumeTask();
+}
+
+pub fn network_mediator_wait_rx(sd: i16, timeout_s: u32) !bool {
+    return connectionManager.wait_rx(sd, timeout_s);
+}
