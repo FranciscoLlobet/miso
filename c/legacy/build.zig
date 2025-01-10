@@ -81,7 +81,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(lib);
 }
 
-const c_flags = [_][]const u8{ "-O2", "-DEFM32GG390F1024", "-DSL_CATALOG_POWER_MANAGER_PRESENT=1", "-fdata-sections", "-ffunction-sections", "-DMISO_APPLICATION" };
+const c_flags = [_][]const u8{ "-DMBEDTLS_CONFIG_FILE=\"miso_mbedtls_config.h\"", "-O2", "-DEFM32GG390F1024", "-DSL_CATALOG_POWER_MANAGER_PRESENT=1", "-fdata-sections", "-ffunction-sections", "-DMISO_APPLICATION" };
 
 const include_path = [_][]const u8{
     "inc",
@@ -90,4 +90,7 @@ const include_path = [_][]const u8{
 const source_paths = [_][]const u8{
     "src/config.c",
     "src/wifi_service.c",
+    "src/mbedtls_adapter/entropy.c",
+    "src/mbedtls_adapter/timing.c",
+    "src/mbedtls_adapter/threading.c",
 };

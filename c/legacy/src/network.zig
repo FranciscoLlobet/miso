@@ -20,11 +20,16 @@
 const std = @import("std");
 const freertos = @import("freertos");
 
-const c = @cImport({
-    @cInclude("network.h");
-    @cInclude("wifi_service.h");
-    // @cInclude("lwm2m_client.h");
-});
+//const c = @cImport({
+//    @cInclude("network.h");
+//    @cInclude("wifi_service.h");
+//    // @cInclude("lwm2m_client.h");
+//});
+
+const c = @import("legacy.zig").c;
+const legacy = @import("legacy.zig");
+
+const create_network_mediator = legacy.create_network_mediator;
 
 /// SimpleLink Spawn Queue Executor
 const simpleLinkSpawn = struct {
@@ -73,7 +78,7 @@ pub fn start() void {
     c.create_wifi_service_task();
 
     // Create the network service mediator
-    _ = c.create_network_mediator();
+    _ = create_network_mediator();
 
     // Create the SimpleLink Spawn task
     simpleLinkSpawnTask.init() catch unreachable;

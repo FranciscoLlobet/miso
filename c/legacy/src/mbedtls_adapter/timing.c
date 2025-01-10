@@ -29,7 +29,7 @@
 
 #include "mbedtls/timing.h"
 #include "timing_alt.h"
-
+#include <stdbool.h>
 
 enum{
 	timer_cancelled = -1,

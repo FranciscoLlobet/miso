@@ -62,6 +62,12 @@ pub fn build(b: *std.Build) void {
         fw.add_app_import("picohttpparser", picohttpparser, .{});
         fw.add_object_file(picohttpparser_package.artifact("picohttpparser").getEmittedBin());
 
+        // mbedTLS
+        const mbedtls_package = b.dependency("mbedtls", .{ .optimize = optimize });
+        const mbedtls = mbedtls_package.module("mbedtls");
+        fw.add_app_import("mbedtls", mbedtls, .{});
+        fw.add_object_file(mbedtls_package.artifact("mbedtls").getEmittedBin());
+
         // Legacy
         const legacy_package = b.dependency("legacy", .{ .optimize = optimize });
         const legacy = legacy_package.module("legacy");

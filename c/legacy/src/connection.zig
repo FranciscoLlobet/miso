@@ -389,7 +389,7 @@ pub var connectionManager: @This() = undefined;
 /// Handle the mbedtls threading
 extern fn miso_mbedtls_set_treading_alt() callconv(.C) void;
 
-export fn create_network_mediator() callconv(.C) c_int {
+pub fn create_network_mediator() callconv(.C) c_int {
     connectionManager.init() catch unreachable;
     miso_mbedtls_set_treading_alt();
     return 0;

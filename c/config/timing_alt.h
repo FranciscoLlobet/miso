@@ -8,7 +8,9 @@
 #ifndef INCLUDE_CONFIG_TIMING_ALT_H_
 #define INCLUDE_CONFIG_TIMING_ALT_H_
 
-#include "miso.h"
+//#include "miso.h"
+#include <FreeRTOS.h>
+#include <timers.h>
 
 struct miso_mbedtls_timing_delay_s
 {
