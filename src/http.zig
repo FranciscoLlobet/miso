@@ -18,17 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 const std = @import("std");
-const freertos = @import("freertos.zig");
+const freertos = @import("freertos");
 const config = @import("config.zig");
-const system = @import("system.zig");
-const connection = @import("connection.zig");
-const file = @import("fatfs.zig").file;
-const led = @import("leds.zig");
-const simpleConnection = @import("simpleConnection.zig");
-const c = @cImport({
-    @cInclude("board.h");
-    @cInclude("picohttpparser.h");
-});
+const system = @import("board");
+const legacy = @import("legacy");
+const connection = legacy.connection;
+const simpleConnection = legacy.simpleConnection;
+const file = @import("fatfs").file;
+const c = @import("picohttpparser").c;
 
 /// Connection instance
 connection: connection.Connection(simpleConnection.SimpleLinkConnection(.tcp_ip4)),
@@ -219,7 +216,7 @@ pub fn sendGetRequest(self: *@This(), url: []const u8) !void {
 pub fn sendGetRangeRequest(self: *@This(), url: []const u8, start: usize, end: usize) !void {
     const uri = try std.Uri.parse(url);
 
-    const request = try std.fmt.bufPrint(&self.tx_buffer, "GET {s} HTTP/1.1\r\nHost: {s}\r\nRange: bytes={d}-{d}\r\n\r\n", .{ uri.path, uri.host.?, start, end });
+    const request = try std.fmt.bufPrint(&self.tx_buffer, "GET {s} HTTP/1.1\r\nHost: {s}\r\nRange: bytes={d}-{d}\r\n\r\n", .{ uri.path.percent_encoded, uri.host.?.percent_encoded, start, end });
     _ = try self.connection.send(request);
 }
 
@@ -228,7 +225,7 @@ pub fn sendGetRangeRequest(self: *@This(), url: []const u8, start: usize, end: u
 pub fn sendHeadRequest(self: *@This(), url: []const u8) !void {
     const uri = try std.Uri.parse(url);
 
-    const request = try std.fmt.bufPrint(&self.tx_buffer, "HEAD {s} HTTP/1.1\r\nHost: {s}\r\n\r\n", .{ uri.path, uri.host.? });
+    const request = try std.fmt.bufPrint(&self.tx_buffer, "HEAD {s} HTTP/1.1\r\nHost: {s}\r\n\r\n", .{ uri.path.percent_encoded, uri.host.?.percent_encoded });
     _ = try self.connection.send(request);
 }
 
@@ -248,7 +245,7 @@ fn recieveResponse(self: *@This()) !rx_response {
 
     while ((pret == -2) and (rx_count < self.rx_buffer.len)) {
         if (try self.connection.waitRx(5)) {
-            const rec = try self.connection.recieve(self.rx_buffer[rx_count..(self.rx_buffer.len)]);
+            const rec = try self.connection.recieve(self.rx_buffer[rx_count..]);
 
             // returns number of bytes consumed if successful, -2 if request is partial, -1 if failed
             pret = c.phr_parse_response(rec.ptr, rec.len, &minor_version, &status, &msg, &msg_len, &self.headers, &num_headers, prevbuflen);
@@ -410,7 +407,7 @@ const responseHeaders = enum(usize) {
     acceptRanges,
     etag,
 
-    const stringMap = std.ComptimeStringMap(@This(), .{ .{ "Content-Type", .contentType }, .{ "Content-Length", .contentLength }, .{ "Content-Range", .contentRange }, .{ "Connection", .connection }, .{ "Content-Location", .contentLocation }, .{ "Content-Encoding", .contentEncoding }, .{ "Accept-Ranges", .acceptRanges }, .{ "ETag", .etag } });
+    const stringMap = std.StaticStringMap(@This()).initComptime(.{ .{ "Content-Type", .contentType }, .{ "Content-Length", .contentLength }, .{ "Content-Range", .contentRange }, .{ "Connection", .connection }, .{ "Content-Location", .contentLocation }, .{ "Content-Encoding", .contentEncoding }, .{ "Accept-Ranges", .acceptRanges }, .{ "ETag", .etag } });
 
     /// Match a response header to the stringmap
     fn match(header: c.phr_header) ?@This() {
@@ -423,7 +420,7 @@ const acceptRanges = enum(usize) {
     none = @intFromBool(false),
     bytes = @intFromBool(true),
 
-    const stringMap = std.ComptimeStringMap(@This(), .{ .{ "bytes", .bytes }, .{ "none", .none } });
+    const stringMap = std.StaticStringMap(@This()).initComptime(.{ .{ "bytes", .bytes }, .{ "none", .none } });
 
     fn match(header: c.phr_header) !@This() {
         return (stringMap.get(header.value[0..(header.value_len)])) orelse @"error".parse_error;
@@ -434,7 +431,7 @@ const keepAlive = enum(usize) {
     keep_alive = @intFromBool(true),
     close = @intFromBool(false),
 
-    const stringMap = std.ComptimeStringMap(@This(), .{ .{ "keep-alive", .keep_alive }, .{ "close", .close } });
+    const stringMap = std.StaticStringMap(@This()).initComptime(.{ .{ "keep-alive", .keep_alive }, .{ "close", .close } });
 
     fn match(header: c.phr_header) !@This() {
         return (stringMap.get(header.value[0..(header.value_len)])) orelse @"error".parse_error;

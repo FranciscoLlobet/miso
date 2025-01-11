@@ -56,7 +56,6 @@ pub fn build(b: *std.Build) void {
     lib.installHeadersDirectory(b.path("ext/gecko_sdk/platform/CMSIS/Core/Include"), "cmsis/include", .{});
 
     lib.installHeadersDirectory(b.path("../picolibc/clang-compiled/picolibc/include"), "picolib/include", .{});
-
     //const simplelink = b.dependency("simplelink", .{});
 
     //lib.addIncludePath(simplelink.artifact("simplelink").getEmittedIncludeTree().path(b, "simplelink/include"));

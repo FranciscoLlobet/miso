@@ -157,7 +157,7 @@ pub fn SimpleLinkConnection(comptime proto: connection.proto) type {
 
         /// Open a connection to designated peer
         pub fn open(self: *@This(), uri: std.Uri, local_port: ?u16) !void {
-            const host = uri.host.?;
+            const host = uri.host.?.percent_encoded;
             const port = uri.port.?; // If port is not provided, hang!
 
             // Resolve the ip address using DNS

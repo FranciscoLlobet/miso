@@ -27,6 +27,7 @@ const std = @import("std");
 const connection = @import("legacy").connection;
 //const system = @import("system.zig");
 const simpleConnection = @import("legacy").simpleConnection;
+const board = @import("board");
 
 const sntp_error = error{
     invalid_server_version,
@@ -215,7 +216,7 @@ pub fn getTimeFromServer(uri: std.Uri) !ntp_response {
 
     var packet: sntp_v4_packet = undefined;
 
-    const originate_timestamp_s: u32 = 0; //system.time.getNtpTime();
+    const originate_timestamp_s: u32 = board.getNtpTime();
     const originate_timestamp_frac: u32 = 0;
 
     try conn.open(uri, 123);
@@ -233,7 +234,7 @@ pub fn getTimeFromServer(uri: std.Uri) !ntp_response {
 
     const server_time = try packet.process_server_packet(originate_timestamp_s, originate_timestamp_frac);
 
-    //try system.time.setTimeFromNtp(server_time.timestamp_s);
+    try board.setTimeFromNtp(server_time.timestamp_s);
 
     return server_time;
 }

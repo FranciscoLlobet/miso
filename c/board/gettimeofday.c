@@ -10,7 +10,7 @@ int gettimeofday(struct timeval *ptimeval, void *ptimezone)
 
     if (NULL != ptimeval)
     {
-        ptimeval->tv_sec  = 0; //sl_sleeptimer_get_time();
+        ptimeval->tv_sec  = sl_sleeptimer_get_time();
         ptimeval->tv_usec = 0;
     }
 

@@ -54,6 +54,8 @@ pub fn build(b: *std.Build) void {
         board_module.addIncludePath(b.path(p));
     }
 
+    board_module.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "picolib/include"));
+
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
