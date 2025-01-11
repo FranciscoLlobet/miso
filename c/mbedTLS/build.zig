@@ -56,6 +56,8 @@ pub fn build(b: *std.Build) void {
     });
 
     board_module.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "config/include"));
+    board_module.addIncludePath(freertos.artifact("freertos").getEmittedIncludeTree().path(b, "freertos/include"));
+    board_module.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "picolib/include"));
     for (include_path) |p| {
         board_module.addIncludePath(b.path(p));
     }
