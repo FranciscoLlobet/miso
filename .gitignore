@@ -56,3 +56,5 @@ zig-out
 
 .zig-cache
 deps/microzig
+
+venv
