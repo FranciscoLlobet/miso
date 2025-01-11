@@ -208,7 +208,7 @@ const parsedResponse = struct {
 
 /// Function to send an HTTP GET request to a specified URL.
 pub fn sendGetRequest(self: *@This(), url: []const u8) !void {
-    var uri = try std.Uri.parse(url);
+    const uri = try std.Uri.parse(url);
 
     const request = try std.fmt.bufPrint(&self.tx_buffer, "GET {s} HTTP/1.1\r\nHost: {s}\r\n\r\n", .{ uri.path, uri.host.? });
     try self.connection.send(@ptrCast(request), request.len);
@@ -217,7 +217,7 @@ pub fn sendGetRequest(self: *@This(), url: []const u8) !void {
 /// Function to send an HTTP GET request with a specific byte range.
 /// The range is specified by the 'start' and 'end' parameters.
 pub fn sendGetRangeRequest(self: *@This(), url: []const u8, start: usize, end: usize) !void {
-    var uri = try std.Uri.parse(url);
+    const uri = try std.Uri.parse(url);
 
     const request = try std.fmt.bufPrint(&self.tx_buffer, "GET {s} HTTP/1.1\r\nHost: {s}\r\nRange: bytes={d}-{d}\r\n\r\n", .{ uri.path, uri.host.?, start, end });
     _ = try self.connection.send(request);
@@ -226,7 +226,7 @@ pub fn sendGetRangeRequest(self: *@This(), url: []const u8, start: usize, end: u
 /// Function to send an HTTP HEAD request to a specified URL.
 /// HEAD requests retrieve the headers without the message body.
 pub fn sendHeadRequest(self: *@This(), url: []const u8) !void {
-    var uri = try std.Uri.parse(url);
+    const uri = try std.Uri.parse(url);
 
     const request = try std.fmt.bufPrint(&self.tx_buffer, "HEAD {s} HTTP/1.1\r\nHost: {s}\r\n\r\n", .{ uri.path, uri.host.? });
     _ = try self.connection.send(request);
@@ -248,7 +248,7 @@ fn recieveResponse(self: *@This()) !rx_response {
 
     while ((pret == -2) and (rx_count < self.rx_buffer.len)) {
         if (try self.connection.waitRx(5)) {
-            var rec = try self.connection.recieve(self.rx_buffer[rx_count..(self.rx_buffer.len)]);
+            const rec = try self.connection.recieve(self.rx_buffer[rx_count..(self.rx_buffer.len)]);
 
             // returns number of bytes consumed if successful, -2 if request is partial, -1 if failed
             pret = c.phr_parse_response(rec.ptr, rec.len, &minor_version, &status, &msg, &msg_len, &self.headers, &num_headers, prevbuflen);
@@ -274,7 +274,7 @@ fn recieveResponse(self: *@This()) !rx_response {
 
 /// Calculate the end position of the range request
 fn calcRequestEnd(file_size: usize, comptime block_size: usize, current_position: usize) usize {
-    var requestEnd = current_position + (block_size - 1);
+    const requestEnd = current_position + (block_size - 1);
     return if (requestEnd > (file_size - 1)) (file_size - 1) else requestEnd;
 }
 
@@ -283,7 +283,7 @@ pub fn filedownload(self: *@This(), url: []const u8, file_name: [*:0]const u8, c
     var parsed_response: parsedResponse = undefined;
 
     // Parse the URI
-    var uri = try std.Uri.parse(url);
+    const uri = try std.Uri.parse(url);
 
     try self.connection.open(uri, null);
     defer {

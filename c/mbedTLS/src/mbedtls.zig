@@ -73,13 +73,6 @@ pub const groups = [_]u16{
     MBEDTLS_SSL_IANA_TLS_GROUP_NONE,
 };
 
-pub const auth_error = error{
-    no_callback,
-    default_callback,
-    generic_error,
-    unsuported_mode,
-};
-
 pub const mbedtls_error = error{
     psk_conf_error,
     generic_error,

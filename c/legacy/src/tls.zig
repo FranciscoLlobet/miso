@@ -3,6 +3,15 @@ const mbedtls = @import("mbedtls");
 const c = mbedtls.c;
 const connection = @import("connection.zig");
 
+const mbedtls_ssl_context = mbedtls.ssl_context;
+
+pub const auth_error = error{
+    no_callback,
+    default_callback,
+    generic_error,
+    unsuported_mode,
+};
+
 /// mbedTLS context
 pub fn TlsContext(comptime T: type, comptime connType: type, comptime mode: connection.security_mode) type {
     // Mbedtls context
