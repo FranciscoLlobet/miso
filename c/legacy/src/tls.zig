@@ -9,7 +9,7 @@ const mbedtls_ssl_config = mbedtls.ssl_config;
 const mbedtls_nok = mbedtls.mbedtls.nok;
 const mbedtls_ok = mbedtls.mbedtls.ok;
 
-const mbedtls_error = mbedtls.error;
+const mbedtls_error = mbedtls.mbedtls_error;
 
 pub const auth_error = error{
     no_callback,
