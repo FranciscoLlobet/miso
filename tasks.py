@@ -4,8 +4,13 @@ from shutil import rmtree
 from invoke import task
 
 KEY_DIR = Path.cwd() / "keys"
+CONFIG_TXT_DIR = Path.cwd() / "config"
 PRIV_KEY = KEY_DIR / "fw_private_key.pem"
 PUB_KEY = KEY_DIR / "fw_public_key.pem"
+
+CONFIG_PRIV_KEY = KEY_DIR / "config_private_key.pem"
+CONFIG_PUB_KEY = KEY_DIR / "config_public_key.pem"
+
 SIG_FW_DIR = Path.cwd() / "signed"
 
 MCU_BOOT_DEPS = (
@@ -39,12 +44,27 @@ def key_dir(c):
         KEY_DIR.mkdir()
 
 
+@task
+def config_txt_dir(c):
+    """Create config txt directory."""
+    if not CONFIG_TXT_DIR.exists():
+        CONFIG_TXT_DIR.mkdir()
+
 @task(pre=[key_dir])
 def private_key(c):
     """Create private key."""
     c.run(f"openssl ecparam -genkey -name prime256v1 -noout -out {PRIV_KEY}")
 
-
+@task(pre=[key_dir])
+def private_config_key(c):
+    """Create private key."""
+    c.run(f"openssl ecparam -genkey -name prime256v1 -noout -out {CONFIG_PRIV_KEY}")
+    
+@task(pre=[key_dir])
+def public_config_key(c):
+    """Create public key."""
+    c.run(f"openssl ec -in {CONFIG_PRIV_KEY} -pubout -out {CONFIG_PUB_KEY}")
+    
 @task
 def sig_fw_dir(c):
     """Create signed firmware directory."""
