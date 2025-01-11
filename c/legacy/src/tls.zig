@@ -296,15 +296,15 @@ pub fn TlsContext(comptime T: type, comptime connType: type, comptime mode: conn
 
                 if (ret == mbedtls_ok) {
                     if (mode == connection.security_mode.certificate_ec) {
-                        c.mbedtls_ssl_conf_groups(&self.config, &groups[0]);
-                        c.mbedtls_ssl_conf_sig_algs(&self.config, &sig_algorithms[0]);
+                        c.mbedtls_ssl_conf_groups(&self.config, &mbedtls.groups[0]);
+                        c.mbedtls_ssl_conf_sig_algs(&self.config, &mbedtls.sig_algorithms[0]);
                     }
                 }
 
                 if (ret == mbedtls_ok) {
                     switch (mode) {
-                        .psk => c.mbedtls_ssl_conf_ciphersuites(&self.config, &ciphersuites_psk[0]),
-                        .certificate_ec => c.mbedtls_ssl_conf_ciphersuites(&self.config, &ciphersuites_ec[0]),
+                        .psk => c.mbedtls_ssl_conf_ciphersuites(&self.config, &mbedtls.ciphersuites_psk[0]),
+                        .certificate_ec => c.mbedtls_ssl_conf_ciphersuites(&self.config, &mbedtls.ciphersuites_ec[0]),
                         else => {
                             // This authentication mode is not supported yet.
                             ret = mbedtls_nok;
