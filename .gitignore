@@ -58,3 +58,5 @@ zig-out
 deps/microzig
 
 venv
+keys
+signed
