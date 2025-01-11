@@ -4,6 +4,7 @@ const c = mbedtls.c;
 const connection = @import("connection.zig");
 
 const mbedtls_ssl_context = mbedtls.ssl_context;
+const mbedtls_ssl_config = mbedtls.ssl_config;
 
 pub const auth_error = error{
     no_callback,
