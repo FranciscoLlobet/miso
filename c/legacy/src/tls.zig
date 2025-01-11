@@ -11,6 +11,8 @@ const mbedtls_ok = mbedtls.mbedtls.ok;
 
 const mbedtls_error = mbedtls.mbedtls_error;
 
+pub const tls_read_timeout: u32 = 5000;
+
 pub const auth_error = error{
     no_callback,
     default_callback,

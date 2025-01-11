@@ -84,7 +84,6 @@ pub const init_error = error{};
 
 pub const mbedtls_ok: i32 = 0;
 pub const mbedtls_nok: i32 = -1;
-pub const tls_read_timeout: u32 = 5000;
 pub const mbedtls_ssl_context = c.mbedtls_ssl_context;
 pub const mbedtls_ssl_config = c.mbedtls_ssl_config;
 
