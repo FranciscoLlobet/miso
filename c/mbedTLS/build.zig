@@ -23,7 +23,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const lib = b.addStaticLibrary(.{
-        .name = "mbedtls", // freertos
+        .name = "mbedtls",
         .target = target,
         .optimize = optimize,
     });
@@ -42,6 +42,7 @@ pub fn build(b: *std.Build) void {
         lib.installHeadersDirectory(b.path(p), "mbedtls/include", .{});
     }
 
+    //_ = freertos;
     lib.addIncludePath(freertos.artifact("freertos").getEmittedIncludeTree().path(b, "freertos/include"));
     lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "config/include"));
     lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "board/include"));

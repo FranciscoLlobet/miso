@@ -258,4 +258,5 @@ const board_source_paths = [_][]const u8{
     board_base_dir ++ "/board_sd_card.c",
     board_base_dir ++ "/board_i2c_sensors.c",
     board_base_dir ++ "/board_CC3100.c",
+    board_base_dir ++ "/sdmm.c",
 };

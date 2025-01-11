@@ -19,7 +19,7 @@
 
 const std = @import("std");
 //const board = @import("microzig").board;
-const freertos = @import("freertos");
+//const freertos = @import("freertos");
 const c = @cImport({
     @cInclude("simplelink.h");
 });

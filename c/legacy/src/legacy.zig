@@ -1,4 +1,6 @@
 const std = @import("std");
+
+// Export C-Interfaces
 pub const c = @cImport({
     @cInclude("miso.h");
     @cInclude("network.h");
@@ -14,12 +16,14 @@ pub const network = @import("network.zig");
 pub const connection = @import("connection.zig");
 pub const simpleConnection = @import("simpleConnection.zig");
 
+pub const misoEvent = c.miso_event;
+
 pub export const create_network_mediator = connection.create_network_mediator;
 //const suspend_network_mediator = connection.suspend_network_mediator;
 //const resume_network_mediator = connection.resume_network_mediator;
 //const network_mediator_wait_rx = connection.network_mediator_wait_rx;
 
-pub export fn miso_notify_event(event: c.miso_event) callconv(.C) void {
+pub export fn miso_notify_event(event: misoEvent) callconv(.C) void {
     _ = event;
     //;
 }

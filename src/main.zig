@@ -27,6 +27,7 @@ const legacy = @import("legacy");
 const nvm = legacy.nvm;
 const c = legacy.c;
 const network = legacy.network;
+const userTask = @import("userTask.zig");
 
 // Enable or Disable features at compile time
 pub const enable_lwm2m = false;
@@ -38,10 +39,11 @@ pub export const miso_nvm3_handle = &nvm.miso_nvm3;
 pub export const miso_nvm3_init_handle = &nvm.miso_nvm3_init;
 
 pub fn main() noreturn {
-    //
+    board.init();
+
     const appCounter: u32 = nvm.incrementAppCounter() catch 0;
 
-    board.init();
+    userTask.userTask.create();
 
     network.start();
 

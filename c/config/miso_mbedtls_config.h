@@ -13,7 +13,7 @@
  */
 
 /* Including platform definitions */
-#include "FreeRTOS.h"
+#include <FreeRTOS.h>
 #include <time.h>
 
 #define MBEDTLS_ALLOW_PRIVATE_ACCESS    (1)

@@ -1,2 +1,4 @@
 const std = @import("std");
-pub const c = @cImport({@cInclude("jsmn.h")});
+pub const c = @cImport({
+    @cInclude("jsmn.h");
+});

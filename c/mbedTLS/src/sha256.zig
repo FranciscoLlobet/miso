@@ -20,7 +20,7 @@
 const std = @import("std");
 const c = @cImport({
     @cDefine("MBEDTLS_CONFIG_FILE", "\"miso_mbedtls_config.h\"");
-    @cInclude("board.h");
+    // @cInclude("board.h");
     @cInclude("mbedtls/base64.h");
     @cInclude("mbedtls/sha256.h");
 });

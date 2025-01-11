@@ -1,6 +1,9 @@
 {
     "files.associations": {
         "ff.h": "c",
-        "common.h": "c"
+        "common.h": "c",
+        "miso_config.h": "c",
+        "wifi_service.h": "c",
+        "network.h": "c"
     }
 }
