@@ -113,8 +113,16 @@ fn start_connectivity(self: *@This()) state {
 fn start_ntp_time(self: *@This()) state {
     const ntp_uri: std.Uri = std.Uri.parse("ntp://1.de.pool.ntp.org:123") catch unreachable;
 
-    if (ntp.getTimeFromServer(ntp_uri)) |ntpResponse| {
+    const originate_timestamp_s: u32 = board.getNtpTime();
+    //const originate_timestamp_frac: u32 = 0;
+
+    if (ntp.getTimeFromServer(ntp_uri, originate_timestamp_s, 0)) |ntpResponse| {
+
+        // Store last ntp sync time
         self.ntpSyncTime = ntpResponse.timestamp_s;
+
+        // Set the NTP time on board
+        try board.setTimeFromNtp(ntpResponse.timestamp_s);
 
         // Calculate the next time to sync
         const nextSyncTime: u32 = if (ntpResponse.poll_interval > 60 * 60) @as(u32, 60 * 60 * 1000) else ntpResponse.poll_interval * 1000;

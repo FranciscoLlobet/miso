@@ -25,9 +25,7 @@
 //!
 const std = @import("std");
 const connection = @import("legacy").connection;
-//const system = @import("system.zig");
 const simpleConnection = @import("legacy").simpleConnection;
-const board = @import("board");
 
 const sntp_error = error{
     invalid_server_version,
@@ -95,7 +93,9 @@ const stratum = enum(u8) {
 };
 
 const poll_interval = enum(u8) {
-    interval_4s,
+    interval_1s = 0,
+    interval_2s = 1,
+    interval_4s = 2,
     interval_8s = 3,
     /// Minimum supported poll interval for compatibility with most servers
     interval_16s = 4,
@@ -111,11 +111,14 @@ const poll_interval = enum(u8) {
     interval_16384s = 14,
     interval_32768s = 15,
     interval_65536s = 16,
+    /// Maximum supported poll interval
     interval_131072s = 17,
 };
 
+/// Mask for the server response
 const server_response_mask: u8 = (7 << 3) | (7 << 0);
 
+/// NTP processed response
 pub const ntp_response = struct { timestamp_s: u32, timestamp_frac: u32, poll_interval: u32 };
 
 /// Non public sntp v4 packet
@@ -137,11 +140,12 @@ const sntp_v4_packet = packed struct {
     originate_timestamp_fraction: u32,
 
     receive_timestamp_seconds: u32,
-    recieve_timestamp_fraction: u32,
+    receive_timestamp_fraction: u32,
 
     transmit_timestamp_seconds: u32,
     transmit_timestamp_fraction: u32,
 
+    /// Create a new sNTP v4 request packet.
     pub fn createRequest(self: *@This(), originate_timestamp_s: u32, originate_timestamp_frac: u32) !void {
         // Zero the packet using memory magic
         @memset(self.slice(), 0);
@@ -156,6 +160,7 @@ const sntp_v4_packet = packed struct {
         return @as([*]u8, @ptrCast(self))[0..@sizeOf(@This())];
     }
 
+    /// Get the length of the packet.
     pub inline fn len() usize {
         return @sizeOf(@This());
     }
@@ -177,16 +182,17 @@ const sntp_v4_packet = packed struct {
         }
 
         const server_timestamp_s = @byteSwap(self.receive_timestamp_seconds);
-        const server_timestamp_frac = @byteSwap(self.recieve_timestamp_fraction);
+        const server_timestamp_frac = @byteSwap(self.receive_timestamp_fraction);
         const server_origin_timestamp_s = @byteSwap(self.originate_timestamp_seconds);
         const server_origin_timestamp_frac = @byteSwap(self.originate_timestamp_fraction);
         const server_poll_interval = self.poll_interval;
 
+        // Check if the origin timestamp is the same as the one sent before
         if ((server_origin_timestamp_s != origin_timestamp_s) or (server_origin_timestamp_frac != origin_timestamp_frac)) {
             return sntp_error.invalid_origin_timestamp;
         }
 
-        // convert the poll interval response and conver it to a seconds value
+        // convert the poll interval response and convert it to a seconds value
         const next_poll_interval: u32 = @shlExact(@as(u32, 1), @as(u5, if (server_poll_interval < @intFromEnum(poll_interval.interval_16s))
             @intFromEnum(poll_interval.interval_16s)
         else if (server_poll_interval > @intFromEnum(poll_interval.interval_131072s))
@@ -211,13 +217,10 @@ fn send(c: *@TypeOf(conn), packet: *sntp_v4_packet) !void {
 
 /// Get the current time from an sNTP server using the given URI.
 ///
-pub fn getTimeFromServer(uri: std.Uri) !ntp_response {
+pub fn getTimeFromServer(uri: std.Uri, originate_timestamp_s: u32, originate_timestamp_frac: u32) !ntp_response {
     //conn.init();
 
     var packet: sntp_v4_packet = undefined;
-
-    const originate_timestamp_s: u32 = board.getNtpTime();
-    const originate_timestamp_frac: u32 = 0;
 
     try conn.open(uri, 123);
     defer {
@@ -233,8 +236,6 @@ pub fn getTimeFromServer(uri: std.Uri) !ntp_response {
     _ = try conn.recieve(packet.slice());
 
     const server_time = try packet.process_server_packet(originate_timestamp_s, originate_timestamp_frac);
-
-    try board.setTimeFromNtp(server_time.timestamp_s);
 
     return server_time;
 }
