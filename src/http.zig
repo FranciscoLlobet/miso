@@ -39,8 +39,10 @@ tx_buffer: [256]u8 align(@alignOf(u32)),
 /// RX Buffer
 rx_buffer: [1536]u8 align(@alignOf(u32)),
 
-// Etag
+// Etag buffer
 etag: [64]u8,
+
+etag_slice: ?[]u8,
 
 file: file,
 
@@ -270,7 +272,10 @@ inline fn calcRequestEnd(file_size: usize, comptime block_size: usize, current_p
 }
 
 /// File Download using HTTP
-pub fn filedownload(self: *@This(), uri: std.Uri, file_name: [*:0]const u8, comptime block_size: usize, comptime max_file_size: usize) !void {
+///
+/// This function will download a file from a specified URI and store it in the file system
+///
+pub fn filedownload(self: *@This(), uri: std.Uri, file_name: [*:0]const u8, comptime block_size: usize, comptime max_file_size: usize) !?[]u8 {
     var parsed_response: parsedResponse = undefined;
 
     // Parse the URI
@@ -293,7 +298,11 @@ pub fn filedownload(self: *@This(), uri: std.Uri, file_name: [*:0]const u8, comp
     }
 
     if (parsed_response.getEtag()) |etag| {
+        // Copy the etag into the buffer
         @memcpy(self.etag[0..].ptr, etag);
+        self.etag_slice = self.etag[0..etag.len];
+    } else {
+        self.etag_slice = null;
     }
 
     // Open the file for writing
@@ -378,6 +387,7 @@ pub fn filedownload(self: *@This(), uri: std.Uri, file_name: [*:0]const u8, comp
     }
 
     // return the etag ?
+    return self.etag_slice;
 }
 
 pub fn eTag(self: *@This()) ?[]const u8 {
