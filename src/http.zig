@@ -25,13 +25,13 @@ const legacy = @import("legacy");
 const connection = legacy.connection;
 const simpleConnection = legacy.simpleConnection;
 const file = @import("fatfs").file;
-const c = @import("picohttpparser").c;
+const phr = @import("picohttpparser");
 
 /// Connection instance
 connection: connection.Connection(simpleConnection.SimpleLinkConnection(.tcp_ip4)),
 
 /// Array to store parsed header information
-headers: [24]c.phr_header,
+headers: [24]phr.phr_header,
 
 /// TX Buffer
 tx_buffer: [256]u8 align(@alignOf(u32)),
@@ -72,7 +72,7 @@ const @"error" = error{
 };
 
 /// HTTP Response from server
-const rx_response = struct { payload: ?[]u8, headers: []c.phr_header, status: u32 };
+const rx_response = struct { payload: ?[]u8, headers: []phr.phr_header, status: u32 };
 
 /// Authentication callback function.
 /// Used during the connection phase for providing PSK credentials
@@ -101,10 +101,10 @@ const rangeResponse = struct {
     /// Function to parse the Content-Range header
     ///
     /// - 206 partial-content: This function is currently parsing correctly a 206 response. Format: {start}-{end}/{total}
-    /// - 416 Requested Range Not Satisfieable. Here the format is */{total} where {total} is the total size.
+    /// - 416 Requested Range Not Satisfiable. Here the format is */{total} where {total} is the total size.
     ///
     /// This function will parse and assume the happy path (206 - Partial Content).
-    fn match(header: c.phr_header) !?@This() {
+    fn match(header: phr.phr_header) !?@This() {
         // Pre-fill the returned structure with default values
         var ret: @This() = .{ .start = 0, .end = 0, .total = null };
 
@@ -112,7 +112,7 @@ const rangeResponse = struct {
         if (!std.mem.eql(u8, header.value[0.."bytes ".len], "bytes ")) {
             return @"error".range_response_parse_error; // Does not contain the expected "bytes " string
         } else if (std.mem.eql(u8, header.value[0.."bytes *".len], "bytes *")) {
-            // Requested Range Not Satisfieable
+            // Requested Range Not Satisfiable
             return null;
         } else {
             var iter = std.mem.splitAny(u8, header.value["bytes ".len..header.value_len], "-/");
@@ -204,27 +204,21 @@ const parsedResponse = struct {
 };
 
 /// Function to send an HTTP GET request to a specified URL.
-pub fn sendGetRequest(self: *@This(), url: []const u8) !void {
-    const uri = try std.Uri.parse(url);
-
+pub fn sendGetRequest(self: *@This(), uri: *std.Uri) !void {
     const request = try std.fmt.bufPrint(&self.tx_buffer, "GET {s} HTTP/1.1\r\nHost: {s}\r\n\r\n", .{ uri.path, uri.host.? });
     try self.connection.send(@ptrCast(request), request.len);
 }
 
 /// Function to send an HTTP GET request with a specific byte range.
 /// The range is specified by the 'start' and 'end' parameters.
-pub fn sendGetRangeRequest(self: *@This(), url: []const u8, start: usize, end: usize) !void {
-    const uri = try std.Uri.parse(url);
-
+pub fn sendGetRangeRequest(self: *@This(), uri: *const std.Uri, start: usize, end: usize) !void {
     const request = try std.fmt.bufPrint(&self.tx_buffer, "GET {s} HTTP/1.1\r\nHost: {s}\r\nRange: bytes={d}-{d}\r\n\r\n", .{ uri.path.percent_encoded, uri.host.?.percent_encoded, start, end });
     _ = try self.connection.send(request);
 }
 
 /// Function to send an HTTP HEAD request to a specified URL.
 /// HEAD requests retrieve the headers without the message body.
-pub fn sendHeadRequest(self: *@This(), url: []const u8) !void {
-    const uri = try std.Uri.parse(url);
-
+pub fn sendHeadRequest(self: *@This(), uri: *const std.Uri) !void {
     const request = try std.fmt.bufPrint(&self.tx_buffer, "HEAD {s} HTTP/1.1\r\nHost: {s}\r\n\r\n", .{ uri.path.percent_encoded, uri.host.?.percent_encoded });
     _ = try self.connection.send(request);
 }
@@ -235,20 +229,20 @@ fn recieveResponse(self: *@This()) !rx_response {
     var pret: i32 = -2; // Incomplete request
     var prevbuflen: usize = 0;
 
-    var minor_version: i32 = undefined;
     var status: i32 = undefined;
-    var msg: [*c]u8 = undefined;
-    var msg_len: usize = undefined;
-    var num_headers: usize = self.headers.len;
     var payload_len: usize = undefined;
     var payload: ?[]u8 = null;
+    var headers: []phr.phr_header = undefined;
 
     while ((pret == -2) and (rx_count < self.rx_buffer.len)) {
         if (try self.connection.waitRx(5)) {
             const rec = try self.connection.recieve(self.rx_buffer[rx_count..]);
 
-            // returns number of bytes consumed if successful, -2 if request is partial, -1 if failed
-            pret = c.phr_parse_response(rec.ptr, rec.len, &minor_version, &status, &msg, &msg_len, &self.headers, &num_headers, prevbuflen);
+            const res = phr.parse_response(rec, prevbuflen, &self.headers);
+
+            pret = res.result;
+            status = res.status;
+            headers = res.headers;
             prevbuflen = rx_count;
             rx_count += rec.len;
         } else {
@@ -266,28 +260,28 @@ fn recieveResponse(self: *@This()) !rx_response {
         return @"error".rx_error;
     }
 
-    return .{ .payload = payload, .headers = self.headers[0..num_headers], .status = @intCast(status) };
+    return .{ .payload = payload, .headers = headers, .status = @intCast(status) };
 }
 
 /// Calculate the end position of the range request
-fn calcRequestEnd(file_size: usize, comptime block_size: usize, current_position: usize) usize {
+inline fn calcRequestEnd(file_size: usize, comptime block_size: usize, current_position: usize) usize {
     const requestEnd = current_position + (block_size - 1);
     return if (requestEnd > (file_size - 1)) (file_size - 1) else requestEnd;
 }
 
 /// File Download using HTTP
-pub fn filedownload(self: *@This(), url: []const u8, file_name: [*:0]const u8, comptime block_size: usize, comptime max_file_size: usize) !void {
+pub fn filedownload(self: *@This(), uri: std.Uri, file_name: [*:0]const u8, comptime block_size: usize, comptime max_file_size: usize) !void {
     var parsed_response: parsedResponse = undefined;
 
     // Parse the URI
-    const uri = try std.Uri.parse(url);
+    //const uri = try std.Uri.parse(url);
 
     try self.connection.open(uri, null);
     defer {
         self.connection.close() catch {};
     }
 
-    try self.sendHeadRequest(url);
+    try self.sendHeadRequest(&uri);
 
     if (200 != try parsed_response.processHeaders(try self.recieveResponse())) {
         return @"error".status_code_nok;
@@ -314,7 +308,7 @@ pub fn filedownload(self: *@This(), url: []const u8, file_name: [*:0]const u8, c
         // Calculate the end position of the request
         const requestEnd = calcRequestEnd(fileSize, block_size, self.file.tell());
 
-        try self.sendGetRangeRequest(url, self.file.tell(), requestEnd);
+        try self.sendGetRangeRequest(&uri, self.file.tell(), requestEnd);
 
         // We expect a HTTP code 206 Partial Content.
         if (206 == try parsed_response.processHeaders(try self.recieveResponse())) {
@@ -410,7 +404,7 @@ const responseHeaders = enum(usize) {
     const stringMap = std.StaticStringMap(@This()).initComptime(.{ .{ "Content-Type", .contentType }, .{ "Content-Length", .contentLength }, .{ "Content-Range", .contentRange }, .{ "Connection", .connection }, .{ "Content-Location", .contentLocation }, .{ "Content-Encoding", .contentEncoding }, .{ "Accept-Ranges", .acceptRanges }, .{ "ETag", .etag } });
 
     /// Match a response header to the stringmap
-    fn match(header: c.phr_header) ?@This() {
+    fn match(header: phr.phr_header) ?@This() {
         return stringMap.get(header.name[0..(header.name_len)]);
     }
 };
@@ -422,7 +416,7 @@ const acceptRanges = enum(usize) {
 
     const stringMap = std.StaticStringMap(@This()).initComptime(.{ .{ "bytes", .bytes }, .{ "none", .none } });
 
-    fn match(header: c.phr_header) !@This() {
+    fn match(header: phr.phr_header) !@This() {
         return (stringMap.get(header.value[0..(header.value_len)])) orelse @"error".parse_error;
     }
 };
@@ -433,7 +427,7 @@ const keepAlive = enum(usize) {
 
     const stringMap = std.StaticStringMap(@This()).initComptime(.{ .{ "keep-alive", .keep_alive }, .{ "close", .close } });
 
-    fn match(header: c.phr_header) !@This() {
+    fn match(header: phr.phr_header) !@This() {
         return (stringMap.get(header.value[0..(header.value_len)])) orelse @"error".parse_error;
     }
 };
@@ -455,7 +449,7 @@ const contentType = enum(usize) {
     const strings = [_][]const u8{ "Unknown", "text/html", "text/plain", "application/json", "application/xml", "application/javascript", "text/css", "image/jpeg", "application/octet-stream", "application/pdf", "application/zip", "multipart/byteranges" };
 
     /// Match content to Content-Type(s)
-    fn match(header: c.phr_header) !@This() {
+    fn match(header: phr.phr_header) !@This() {
         for (strings, 0..) |ct, idx| {
             if (header.value_len >= ct.len) {
                 if (std.mem.eql(u8, header.value[0..ct.len], ct)) {

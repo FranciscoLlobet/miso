@@ -163,7 +163,9 @@ fn perform_firmware_download(self: *@This()) state {
 
 fn downloadAndVerify() !bool {
     // Download the firmware
-    try http.service.filedownload(config.getHttpFwUri(), config.fw_file_name, config.file_block_size, 1024 * 1024);
+    const uri = std.Uri.parse(config.getHttpFwUri()) catch unreachable;
+
+    try http.service.filedownload(uri, config.fw_file_name, config.file_block_size, 1024 * 1024);
 
     //try firmware.checkFirmwareImage(config.fw_file_name);
 
