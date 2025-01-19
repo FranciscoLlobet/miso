@@ -42,9 +42,9 @@ const task_priorities = enum(freertos.BaseType_t) {
 pub const min_task_stack_depth: u16 = freertos.c.configMINIMAL_STACK_SIZE;
 
 // Enable or Disable features at compile time
-pub const enable_lwm2m = root.enable_lwm2m;
-pub const enable_mqtt = root.enable_mqtt;
-pub const enable_http = root.enable_http;
+pub const enable_lwm2m = false; //root.enable_lwm2m;
+pub const enable_mqtt = true; //root.enable_mqtt;
+pub const enable_http = true; //root.enable_http;
 
 pub const rtos_prio_boot_app = @intFromEnum(task_priorities.rtos_prio_highest);
 
@@ -117,6 +117,10 @@ pub inline fn getHttpFwUri() []u8 {
 
 pub inline fn getHttpSigUri() []u8 {
     return c.config_get_http_sig_uri()[0..c.strlen(c.config_get_http_sig_uri())];
+}
+
+pub inline fn getMqttUrl() []u8 {
+    return c.config_get_mqtt_url()[0..c.strlen(c.config_get_mqtt_url())];
 }
 
 /// Open file and calculate SHA256 hash

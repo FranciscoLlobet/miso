@@ -15,6 +15,7 @@ pub const nvm = @import("nvm.zig");
 pub const network = @import("network.zig");
 pub const connection = @import("connection.zig");
 pub const simpleConnection = @import("simpleConnection.zig");
+pub const tls = @import("tls.zig");
 
 pub export const create_network_mediator = connection.create_network_mediator;
 //const suspend_network_mediator = connection.suspend_network_mediator;

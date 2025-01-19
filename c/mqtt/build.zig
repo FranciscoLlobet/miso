@@ -29,7 +29,7 @@ pub fn build(b: *std.Build) void {
     });
 
     //const freertos = b.dependency("freertos", .{});
-    const board = b.dependency("board", .{});
+    const board = b.dependency("board", .{ .optimize = optimize });
 
     for (source_path) |p| {
         lib.addCSourceFile(.{ .file = b.path(p), .flags = &c_flags });

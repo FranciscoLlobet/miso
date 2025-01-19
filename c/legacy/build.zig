@@ -31,10 +31,10 @@ pub fn build(b: *std.Build) void {
     //b.dependencyFromBuildZig(comptime build_zig: type, args: anytype)
     const simplelink = b.dependency("simplelink", .{ .optimize = optimize });
     const freertos = b.dependency("freertos", .{ .optimize = optimize });
-    const board = b.dependency("board", .{});
-    const fatfs = b.dependency("fatfs", .{});
-    const mbedtls = b.dependency("mbedtls", .{});
-    const jsmn = b.dependency("jsmn", .{});
+    const board = b.dependency("board", .{ .optimize = optimize });
+    const fatfs = b.dependency("fatfs", .{ .optimize = optimize });
+    const mbedtls = b.dependency("mbedtls", .{ .optimize = optimize });
+    const jsmn = b.dependency("jsmn", .{ .optimize = optimize });
 
     for (source_paths) |p| {
         lib.addCSourceFile(.{ .file = b.path(p), .flags = &c_flags });
@@ -77,7 +77,7 @@ pub fn build(b: *std.Build) void {
     }
 
     board_module.addImport("freertos", freertos.module("freertos"));
-
+    board_module.addImport("mbedtls", mbedtls.module("mbedtls"));
     b.installArtifact(lib);
 }
 

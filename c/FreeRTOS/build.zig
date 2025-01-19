@@ -28,6 +28,8 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const board = b.dependency("board", .{});
+
     for (source_paths) |p| {
         lib.addCSourceFile(.{ .file = b.path(p), .flags = &c_flags });
     }
@@ -36,12 +38,8 @@ pub fn build(b: *std.Build) void {
         lib.addIncludePath(b.path(p));
     }
 
-    const board = b.dependency("board", .{});
-
     lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "config/include"));
     lib.addIncludePath(board.artifact("board").getEmittedIncludeTree().path(b, "picolib/include"));
-
-    //const microzig = b.dependency("microzig", .{});
 
     // Process modules
     const freertos_module = b.addModule("freertos", .{
@@ -56,7 +54,6 @@ pub fn build(b: *std.Build) void {
     for (include_path) |p| {
         freertos_module.addIncludePath(b.path(p));
     }
-    //freertos_module.addImport("microzig", microzig.module("microzig"));
 
     lib.installHeadersDirectory(b.path("FreeRTOS-Kernel/include"), "freertos/include", .{});
     lib.installHeadersDirectory(b.path("FreeRTOS-Kernel/portable/GCC/ARM_CM3"), "freertos/include", .{});

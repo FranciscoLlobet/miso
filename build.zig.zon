@@ -63,12 +63,25 @@
         .@"bsp/xdk110" = .{
             .path = "bsp/xdk110",
         },
-        .board = .{ .path = "c" },
-        .fatfs = .{ .path = "c/FatFs" },
-        .simplelink = .{ .path = "c/SimpleLink" },
-        .mbedtls = .{ .path = "c/mbedTLS" },
-        .picohttpparser = .{ .path = "c/picohttpparser" },
-        .legacy = .{ .path = "c/legacy" },
+        .board = .{
+            .path = "c",
+        },
+        .fatfs = .{
+            .path = "c/FatFs",
+        },
+        .simplelink = .{
+            .path = "c/SimpleLink",
+        },
+        .mbedtls = .{
+            .path = "c/mbedTLS",
+        },
+        .picohttpparser = .{
+            .path = "c/picohttpparser",
+        },
+        .legacy = .{
+            .path = "c/legacy",
+        },
+        .mqtt = .{ .path = "c/mqtt" },
         .freertos = .{
             .path = "c/FreeRTOS",
         },

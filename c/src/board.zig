@@ -136,3 +136,7 @@ pub fn setTimeFromNtp(ntp_time: u32) !void {
     //      // return
     //  }
 }
+
+pub fn calculateDeadline(timeout_s: u32) u32 {
+    return getTime() + timeout_s;
+}

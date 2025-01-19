@@ -133,7 +133,7 @@ pub const schemes = enum(u32) {
     mqtts = 3 + 16,
     coaps = 4 + 16,
 
-    const stringmap = std.ComptimeStringMap(@This(), .{ .{ "ntp", .ntp }, .{ "http", .http }, .{ "https", .https }, .{ "mqtt", .mqtt }, .{ "mqtts", .mqtts }, .{ "coap", .coap }, .{ "coaps", .coaps } });
+    const stringmap = std.StaticStringMap(@This()).initComptime(.{ .{ "ntp", .ntp }, .{ "http", .http }, .{ "https", .https }, .{ "mqtt", .mqtt }, .{ "mqtts", .mqtts }, .{ "coap", .coap }, .{ "coaps", .coaps } });
 
     pub fn match(scheme: []const u8) ?@This() {
         return stringmap.get(scheme);

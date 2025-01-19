@@ -9,10 +9,11 @@ const nvm = legacy.nvm;
 const c = legacy.c;
 const network = legacy.network;
 const fatfs = @import("fatfs");
+const config = @import("config.zig");
 
 const ntp = @import("ntp.zig");
-const config = @import("config.zig");
 const http = @import("http.zig");
+const mqtt = @import("mqtt.zig");
 
 const state = enum(usize) {
     verify_config = 0,
@@ -69,18 +70,20 @@ fn myUserTaskFunction(self: *@This()) noreturn {
     fatfs.mount("SD") catch unreachable;
 
     while (true) {
-        const current_state = self.state;
-        //       var next_state: state = undefined;
 
+        // Load current state
+        const current_state = self.state;
+
+        // State transition
         self.state = switch (current_state) {
             .verify_config => verify_config(),
             .start_connectivity => self.start_connectivity(),
             .start_ntp_time => self.start_ntp_time(),
             .perform_firmware_download => self.perform_firmware_download(),
-            .start_mqtt => .start_mqtt,
+            .start_mqtt => self.start_mqtt(),
+            .working => .working,
             else => .verify_config,
         };
-        //next_state;
     }
 
     unreachable;
@@ -159,6 +162,16 @@ fn perform_firmware_download(self: *@This()) state {
     }
 
     return state.start_mqtt;
+}
+
+fn start_mqtt(self: *@This()) state {
+    _ = self;
+
+    mqtt.service.resumeTask();
+
+    // wait until connected?
+
+    return state.working;
 }
 
 fn downloadAndVerify() !bool {

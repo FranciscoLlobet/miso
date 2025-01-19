@@ -6,8 +6,8 @@ const connection = @import("connection.zig");
 const mbedtls_ssl_context = mbedtls.ssl_context;
 const mbedtls_ssl_config = mbedtls.ssl_config;
 
-const mbedtls_nok = mbedtls.mbedtls.nok;
-const mbedtls_ok = mbedtls.mbedtls.ok;
+const mbedtls_nok = mbedtls.mbedtls_nok;
+const mbedtls_ok = mbedtls.mbedtls_ok;
 
 const mbedtls_error = mbedtls.mbedtls_error;
 

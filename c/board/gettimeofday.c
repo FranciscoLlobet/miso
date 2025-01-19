@@ -1,8 +1,10 @@
 
 #include <sys/time.h>
+#include "sl_sleeptimer.h"
 // Gets called by time()
 
 extern int gettimeofday(struct timeval *ptimeval, void *ptimezone);
+
 /* implementing system time */
 int gettimeofday(struct timeval *ptimeval, void *ptimezone)
 {

@@ -21,6 +21,7 @@ const std = @import("std");
 //const connection = @import("connection.zig");
 pub const c = @cImport({
     @cDefine("MBEDTLS_CONFIG_FILE", "\"miso_mbedtls_config.h\"");
+    @cInclude("string.h");
     @cInclude("mbedtls/ctr_drbg.h");
     @cInclude("mbedtls/timing.h");
     @cInclude("mbedtls/aes.h");
@@ -84,8 +85,8 @@ pub const init_error = error{};
 
 pub const mbedtls_ok: i32 = 0;
 pub const mbedtls_nok: i32 = -1;
-pub const mbedtls_ssl_context = c.mbedtls_ssl_context;
-pub const mbedtls_ssl_config = c.mbedtls_ssl_config;
+pub const ssl_context = c.mbedtls_ssl_context;
+pub const ssl_config = c.mbedtls_ssl_config;
 
 pub fn base64Decode(input: [*:0]u8, output: []u8) ![]u8 {
     var len: usize = 0;

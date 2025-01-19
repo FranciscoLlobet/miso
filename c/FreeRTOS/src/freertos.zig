@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 const std = @import("std");
-//const cpu = @import("microzig").cpu;
 pub const c = @cImport({
     @cInclude("FreeRTOS.h");
     @cInclude("task.h");
@@ -123,17 +122,19 @@ pub fn xTaskGetTickCount() TickType_t {
     return c.xTaskGetTickCount();
 }
 
-pub inline fn portYIELD_FROM_ISR(xSwitchRequired: BaseType_t) void {
-    if (xSwitchRequired != pdFALSE) {
-        portYIELD();
-    }
-}
+//pub inline fn portYIELD_FROM_ISR(xSwitchRequired: BaseType_t) void {
+//    if (xSwitchRequired != pdFALSE) {
+//        portYIELD();
+//    }
+//}
 
 pub inline fn portYIELD() void {
-    //cpu.regs.ICSR.modify(.{ .PENDSVSET = 1 });
+    const NVIC_INT_CTRL_REG: *volatile u32 = @ptrFromInt(0xE000ED04);
 
-    //cpu.dsb();
-    //cpu.isb();
+    NVIC_INT_CTRL_REG.* = c.portNVIC_PENDSVSET_BIT;
+
+    asm volatile ("dsb");
+    asm volatile ("isb");
 }
 
 /// Pend function call to the timer service task

@@ -62,6 +62,12 @@ pub fn build(b: *std.Build) void {
         fw.add_app_import("picohttpparser", picohttpparser, .{});
         fw.add_object_file(picohttpparser_package.artifact("picohttpparser").getEmittedBin());
 
+        // Mqtt
+        const mqtt_package = b.dependency("mqtt", .{ .optimize = optimize });
+        const mqtt = mqtt_package.module("mqtt");
+        fw.add_app_import("mqtt", mqtt, .{});
+        fw.add_object_file(mqtt_package.artifact("mqtt").getEmittedBin());
+
         // mbedTLS
         const mbedtls_package = b.dependency("mbedtls", .{ .optimize = optimize });
         const mbedtls = mbedtls_package.module("mbedtls");

@@ -28,6 +28,7 @@ const nvm = legacy.nvm;
 const c = legacy.c;
 const network = legacy.network;
 const userTask = @import("userTask.zig");
+const mqtt = @import("mqtt.zig");
 
 // Enable or Disable features at compile time
 pub const enable_lwm2m = false;
@@ -46,6 +47,8 @@ pub fn main() noreturn {
     userTask.userTask.create();
 
     network.start();
+
+    mqtt.service.create();
 
     _ = c.printf("--- MISO starting FreeRTOS %d---\n\r", appCounter);
 
