@@ -81,7 +81,9 @@
         .legacy = .{
             .path = "c/legacy",
         },
-        .mqtt = .{ .path = "c/mqtt" },
+        .mqtt = .{
+            .path = "c/mqtt",
+        },
         .freertos = .{
             .path = "c/FreeRTOS",
         },
