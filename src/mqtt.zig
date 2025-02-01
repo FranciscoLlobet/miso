@@ -128,10 +128,12 @@ fn authCallback(self: *@This(), security_mode: connection.security_mode) tls.aut
     if (security_mode == .psk) {
         var psk_buf: [64]u8 = undefined; // Request 64 Bytes for Base64 decoder
 
+        defer {
+            @memset(&psk_buf, 0); // Sanitize the buffer to avoid the decoded psk to remain in stack
+        }
+
         const psk = mbedtls.base64Decode(legacy.c.config_get_mqtt_psk_key(), &psk_buf) catch return tls.auth_error.generic_error;
         self.connection.ssl.confPsk(psk, legacy.c.config_get_mqtt_psk_id()) catch return tls.auth_error.generic_error;
-
-        @memset(&psk_buf, 0); // Sanitize the buffer to avoid the decoded psk to remain in stack
     } else {
         return tls.auth_error.unsuported_mode;
     }

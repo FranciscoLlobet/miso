@@ -9,31 +9,37 @@ pub const phr_header = c.phr_header;
 /// Phr response parser
 const phr_parse_response = c.phr_parse_response;
 
-pub fn parse_response(buffer: []u8, last_len: usize, headers: []phr_header) struct {
-    result: i32,
-    minor_version: i32,
-    status: i32,
-    msg: []u8,
-    headers: []phr_header,
-    last_len: usize,
-} {
-    var minor_version: c_int = 0;
-    var status: c_int = 0;
-    var msg: [*c]u8 = undefined;
-    var msg_len: usize = 0;
-    var num_headers: usize = headers.len;
+pub const phr_error = error{
+    parse_failed,
+};
 
-    const result = phr_parse_response(@ptrCast(buffer.ptr), buffer.len, @ptrCast(&minor_version), @ptrCast(&status), &msg, &msg_len, headers.ptr, &num_headers, last_len);
+pub const response = struct {
+    result: i32 = undefined,
+    minor_version: i32 = undefined,
+    status: i32 = undefined,
+    msg: []u8 = undefined,
+    headers: []phr_header = undefined,
+    last_len: usize = undefined,
 
-    return .{
-        .result = @intCast(result),
-        .minor_version = @intCast(minor_version),
-        .status = @intCast(status),
-        .msg = msg[0..msg_len],
-        .headers = headers[0..num_headers],
-        .last_len = last_len,
-    };
-}
+    pub fn parse(buffer: []u8, last_len: usize, headers: []phr_header) phr_error!@This() {
+        var minor_version: c_int = 0;
+        var status: c_int = 0;
+        var msg: [*c]u8 = undefined;
+        var msg_len: usize = 0;
+        var num_headers: usize = headers.len;
+
+        const result = phr_parse_response(@ptrCast(buffer.ptr), buffer.len, @ptrCast(&minor_version), @ptrCast(&status), &msg, &msg_len, headers.ptr, &num_headers, last_len);
+
+        return if ((result == -1) or (result < -2)) phr_error.parse_failed else .{
+            .result = @intCast(result),
+            .minor_version = @intCast(minor_version),
+            .status = @intCast(status),
+            .msg = msg[0..msg_len],
+            .headers = headers[0..num_headers],
+            .last_len = last_len,
+        };
+    }
+};
 
 // returns number of bytes consumed if successful, -2 if request is partial,
 // * -1 if failed */
