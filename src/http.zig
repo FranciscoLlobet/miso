@@ -86,47 +86,25 @@ const @"error" = error{
     range_response_parse_error,
 };
 
-/// HTTP Response from server
-/// Recieve an HTTP response from the server and parse headers.
-fn recieveResponse(connection: *connectionType, rx_buffer: []u8, headers: []phr_header) !http_header.response {
-    var rx_count: usize = 0;
-    var pret: i32 = -2; // Incomplete request
-    var prevbuflen: usize = 0;
+// Example callback implementation for a specific connection type
+fn connectionWaitForRxCallback(opaque_conn: *anyopaque, buffer: []u8, timeout: u32) http_header.response.rx_callback_error![]u8 {
+    // Cast the opaque connection back to the concrete type
+    const connection = @as(*connectionType, @ptrCast(@alignCast(opaque_conn)));
+    var received_data: []u8 = undefined;
 
-    var status: i32 = undefined;
-    var payload_len: usize = undefined;
-    var payload: ?[]u8 = null;
-    var parsed_headers: []phr_header = undefined;
-    var timeouts: usize = 4;
+    const rx_av = connection.waitRx(timeout) catch {
+        return http_header.response.rx_callback_error.rx_error;
+    };
 
-    while ((pret == -2) and (rx_count < rx_buffer.len)) {
-        if (try connection.waitRx(2)) {
-            const rec = try connection.recieve(rx_buffer[rx_count..]);
-
-            const res = try http_header.response.response_parse(rec, prevbuflen, headers);
-
-            pret = res.result;
-            status = res.status;
-            parsed_headers = res.headers;
-            prevbuflen = rx_count;
-            rx_count += rec.len;
-        } else {
-            if (timeouts == 0) {
-                return @"error".timeout;
-            } else {
-                timeouts -= 1;
-            }
-
-            // rx Timeout
-        }
+    if (rx_av) {
+        received_data = connection.recieve(buffer) catch {
+            return http_header.response.rx_callback_error.rx_error;
+        };
+    } else {
+        return http_header.response.rx_callback_error.rx_timeout;
     }
 
-    if (pret >= 0) {
-        payload_len = rx_count - @as(usize, @intCast(pret));
-        payload = if (payload_len != 0) rx_buffer[(rx_count - payload_len)..rx_count] else null;
-    }
-
-    return if (pret >= 0) .{ .payload = payload, .headers = parsed_headers, .status = @intCast(status) } else @"error".phr_library_parse_failed;
+    return received_data;
 }
 
 /// Authentication callback function.
@@ -144,16 +122,14 @@ fn authCallback(self: *legacy.connection.mbedtls, security_mode: legacy.connecti
 
 /// Function to send an HTTP GET request with a specific byte range.
 /// The range is specified by the 'start' and 'end' parameters.
-pub fn sendGetRangeRequest(self: *@This(), uri: *const std.Uri, start: usize, end: usize) !void {
-    const request = try std.fmt.bufPrint(&self.tx_buffer, "GET {s} HTTP/1.1\r\nHost: {s}\r\nRange: bytes={d}-{d}\r\n\r\n", .{ uri.path.percent_encoded, uri.host.?.percent_encoded, start, end });
-    _ = try self.connection.send(request);
+pub fn sendGetRangeRequest(tx_buffer: []u8, uri: *const std.Uri, start: usize, end: usize) ![]u8 {
+    return std.fmt.bufPrint(tx_buffer, "GET {s} HTTP/1.1\r\nHost: {s}\r\nRange: bytes={d}-{d}\r\n\r\n", .{ uri.path.percent_encoded, uri.host.?.percent_encoded, start, end });
 }
 
 /// Function to send an HTTP HEAD request to a specified URL.
 /// HEAD requests retrieve the headers without the message body.
-pub fn sendHeadRequest(self: *@This(), uri: *const std.Uri) !void {
-    const request = try std.fmt.bufPrint(&self.tx_buffer, "HEAD {s} HTTP/1.1\r\nHost: {s}\r\n\r\n", .{ uri.path.percent_encoded, uri.host.?.percent_encoded });
-    _ = try self.connection.send(request);
+pub fn sendHeadRequest(tx_buffer: []u8, uri: *const std.Uri) ![]u8 {
+    return std.fmt.bufPrint(tx_buffer, "HEAD {s} HTTP/1.1\r\nHost: {s}\r\n\r\n", .{ uri.path.percent_encoded, uri.host.?.percent_encoded });
 }
 
 /// Calculate the end position of the range request
@@ -173,17 +149,19 @@ inline fn calcRequestEnd(file_size: usize, comptime block_size: usize, current_p
 pub fn filedownload(self: *@This(), uri: std.Uri, file_name: [*:0]const u8, comptime block_size: usize, comptime max_file_size: usize) !?[]u8 {
     var parsed_response: http_header.parsedResponse = undefined;
 
-    // Parse the URI
-    //const uri = try std.Uri.parse(url);
+    //@memset(&self.tx_buffer, 0);
+    //@memset(&self.rx_buffer, 0);
 
     try self.connection.open(uri, null);
     defer {
         self.connection.close() catch {};
+        @memset(&self.tx_buffer, 0);
+        @memset(&self.rx_buffer, 0);
     }
 
-    try self.sendHeadRequest(&uri);
+    _ = try self.connection.send(try sendHeadRequest(&self.tx_buffer, &uri));
 
-    if (200 != try parsed_response.processHeaders(try recieveResponse(&self.connection, &self.rx_buffer, &self.headers))) {
+    if (200 != try parsed_response.processHeaders(try http_header.response.recieveResponse(&self.connection, &self.rx_buffer, &self.headers, connectionWaitForRxCallback))) {
         return @"error".status_code_nok;
     }
 
@@ -222,10 +200,10 @@ pub fn filedownload(self: *@This(), uri: std.Uri, file_name: [*:0]const u8, comp
 
         const requestEnd = calcRequestEnd(fileSize, block_size, startPosition);
 
-        try self.sendGetRangeRequest(&uri, startPosition, requestEnd);
+        _ = try self.connection.send(try sendGetRangeRequest(&self.tx_buffer, &uri, startPosition, requestEnd));
 
         // We expect a HTTP code 206 Partial Content.
-        if (206 == try parsed_response.processHeaders(try recieveResponse(&self.connection, &self.rx_buffer, &self.headers))) {
+        if (206 == try parsed_response.processHeaders(try http_header.response.recieveResponse(&self.connection, &self.rx_buffer, &self.headers, connectionWaitForRxCallback))) {
 
             // Check if the response contains the expected range header
             if (parsed_response.range == null) {
@@ -271,6 +249,7 @@ pub fn filedownload(self: *@This(), uri: std.Uri, file_name: [*:0]const u8, comp
         if (parsed_response.keep_alive) |kA| {
             if (kA == .close) {
                 // Think about closing the file and reopening it
+                self.file.sync() catch {};
 
                 // Reconnect logic
                 try self.connection.close();

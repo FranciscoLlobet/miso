@@ -5,8 +5,12 @@ pub const phr_header = phr.phr_header;
 pub const phr_response = phr.response;
 
 pub const header_error = error{
+    phr_library_parse_failed,
     parse_error,
     range_response_parse_error,
+
+    rx_timeout,
+    rx_error,
 };
 
 /// HTTP Response Header Types
@@ -137,7 +141,60 @@ pub const response = struct {
     headers: []phr_header,
     status: u32,
 
-    pub const response_parse = phr_response.parse;
+    const response_parse = phr_response.parse;
+
+    pub const rx_callback_error = error{
+        rx_timeout,
+        rx_error,
+    };
+
+    pub const wait_for_rx_callback_fn = *const fn (opaque_conn: *anyopaque, buffer: []u8, timeout: u32) rx_callback_error![]u8;
+
+    /// HTTP Response from server
+    /// Receive an HTTP response from the server and parse headers.
+    pub fn recieveResponse(connection: *anyopaque, rx_buffer: []u8, headers: []phr_header, comptime wait_for_rx_callback: wait_for_rx_callback_fn) !@This() {
+        var rx_count: usize = 0;
+        var pret: i32 = -2; // Incomplete request
+        var prevbuflen: usize = 0;
+
+        var status: i32 = undefined;
+        var payload_len: usize = undefined;
+        var payload: ?[]u8 = null;
+        var parsed_headers: []phr_header = undefined;
+        var timeouts: usize = 4;
+
+        while ((pret == -2) and (rx_count < rx_buffer.len)) {
+            // Use the callback to wait for and receive data
+            const rec = wait_for_rx_callback(connection, rx_buffer[rx_count..], 2) catch |err| {
+                switch (err) {
+                    rx_callback_error.rx_timeout => {
+                        if (timeouts == 0) {
+                            return header_error.rx_timeout;
+                        } else {
+                            timeouts -= 1;
+                            continue;
+                        }
+                    },
+                    rx_callback_error.rx_error => return header_error.rx_error,
+                }
+            };
+
+            const res = try response_parse(rec, prevbuflen, headers);
+
+            pret = res.result;
+            status = res.status;
+            parsed_headers = res.headers;
+            prevbuflen = rx_count;
+            rx_count += rec.len;
+        }
+
+        if (pret >= 0) {
+            payload_len = rx_count - @as(usize, @intCast(pret));
+            payload = if (payload_len != 0) rx_buffer[(rx_count - payload_len)..rx_count] else null;
+        }
+
+        return if (pret >= 0) .{ .payload = payload, .headers = parsed_headers, .status = @intCast(status) } else header_error.phr_library_parse_failed;
+    }
 };
 
 /// Structure representing a parsed HTTP response.
