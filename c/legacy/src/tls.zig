@@ -32,6 +32,8 @@ pub fn TlsContext(comptime T: type, comptime connType: type, comptime mode: conn
             @compileError("Connection type must have a recieve_c method");
         if (!@hasDecl(connType, "send_c"))
             @compileError("Connection type must have a send_c method");
+        if (!@hasField(connType, "proto"))
+            @compileError("Connection type must have a protocol field");
     }
 
     return struct {
@@ -169,6 +171,7 @@ pub fn TlsContext(comptime T: type, comptime connType: type, comptime mode: conn
                 return self.send_dtls(buffer);
             }
         }
+
         /// Send data via DTLS
         fn send_dtls(self: *@This(), buffer: []const u8) !usize {
             var offset: usize = 0;
@@ -239,7 +242,7 @@ pub fn TlsContext(comptime T: type, comptime connType: type, comptime mode: conn
             return if (ret == 0) offset else connection.connection_error.send_error;
         }
         /// Recieve data from peer
-        pub fn recieve(self: *@This(), buffer: []u8) ![]u8 {
+        pub fn receive(self: *@This(), buffer: []u8) ![]u8 {
             if (self.conn.getProto().isTls()) {
                 return self.read_tls(buffer);
             } else {

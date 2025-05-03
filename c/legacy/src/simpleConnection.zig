@@ -260,7 +260,7 @@ pub fn SimpleLinkConnection(comptime proto: connection.proto) type {
         }
 
         /// Basic C Recv
-        pub fn recieve(self: *@This(), data: []u8) ![]u8 {
+        pub fn receive(self: *@This(), data: []u8) ![]u8 {
             const len: isize = self.recieve_c(data);
 
             return if (len <= 0)

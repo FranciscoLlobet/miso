@@ -159,14 +159,30 @@ pub const schemes = enum(u32) {
 
 pub fn Connection(comptime sslType: type) type {
     // Compile time checks
-    if (sslType != void) {
-        if (!@hasDecl(sslType, "init")) {
-            @compileError("SSL Type must have an init function");
-        }
-        if (!@hasDecl(sslType, "deinit")) {
-            @compileError("SSL Type must have a deinit function");
-        }
+
+    if (!@hasDecl(sslType, "init")) {
+        @compileError("SSL Type must have an init function");
     }
+    if (!@hasDecl(sslType, "deinit")) {
+        @compileError("SSL Type must have a deinit function");
+    }
+
+    if (!@hasDecl(sslType, "open")) {
+        @compileError("SSL Type must have a open function");
+    }
+
+    if (!@hasDecl(sslType, "close")) {
+        @compileError("SSL Type must have a close function");
+    }
+
+    if (!@hasDecl(sslType, "send")) {
+        @compileError("SSL Type must have a send function");
+    }
+
+    if (!@hasDecl(sslType, "receive")) {
+        @compileError("SSL Type must have a receive function");
+    }
+
     return struct {
         ssl: sslType,
 
@@ -184,7 +200,7 @@ pub fn Connection(comptime sslType: type) type {
             return self.ssl.send(buffer);
         }
         pub fn recieve(self: *@This(), buffer: []u8) ![]u8 {
-            return self.ssl.recieve(buffer);
+            return self.ssl.receive(buffer);
         }
         pub fn waitRx(self: *@This(), timeout_s: u32) !bool {
             return self.ssl.waitRx(timeout_s);
