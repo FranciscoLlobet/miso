@@ -122,13 +122,13 @@ fn authCallback(self: *legacy.connection.mbedtls, security_mode: legacy.connecti
 
 /// Function to send an HTTP GET request with a specific byte range.
 /// The range is specified by the 'start' and 'end' parameters.
-pub fn sendGetRangeRequest(tx_buffer: []u8, uri: *const std.Uri, start: usize, end: usize) ![]u8 {
+pub fn prepareGetRangeRequest(tx_buffer: []u8, uri: *const std.Uri, start: usize, end: usize) ![]u8 {
     return std.fmt.bufPrint(tx_buffer, "GET {s} HTTP/1.1\r\nHost: {s}\r\nRange: bytes={d}-{d}\r\n\r\n", .{ uri.path.percent_encoded, uri.host.?.percent_encoded, start, end });
 }
 
 /// Function to send an HTTP HEAD request to a specified URL.
 /// HEAD requests retrieve the headers without the message body.
-pub fn sendHeadRequest(tx_buffer: []u8, uri: *const std.Uri) ![]u8 {
+pub fn prepareHeadRequest(tx_buffer: []u8, uri: *const std.Uri) ![]u8 {
     return std.fmt.bufPrint(tx_buffer, "HEAD {s} HTTP/1.1\r\nHost: {s}\r\n\r\n", .{ uri.path.percent_encoded, uri.host.?.percent_encoded });
 }
 
@@ -140,6 +140,11 @@ inline fn calcRequestEnd(file_size: usize, comptime block_size: usize, current_p
     const block_request_size = if (remainder == 0) block_size else (block_size - remainder);
     const requestEnd = current_position + block_request_size - 1;
     return if (requestEnd > (file_size - 1)) (file_size - 1) else requestEnd;
+}
+
+/// Helper function to check if the current position is still within the download range
+inline fn isStillInDownload(current_position: usize, fileSize: usize) ?usize {
+    return if (current_position < fileSize) current_position else null;
 }
 
 /// File Download using HTTP
@@ -159,21 +164,25 @@ pub fn filedownload(self: *@This(), uri: std.Uri, file_name: [*:0]const u8, comp
         @memset(&self.rx_buffer, 0);
     }
 
-    _ = try self.connection.send(try sendHeadRequest(&self.tx_buffer, &uri));
+    // Prepare and send the HEAD request
+    _ = try self.connection.send(try prepareHeadRequest(&self.tx_buffer, &uri));
 
     if (200 != try parsed_response.processHeaders(try http_header.response.recieveResponse(&self.connection, &self.rx_buffer, &self.headers, connectionWaitForRxCallback))) {
         return @"error".status_code_nok;
     }
 
+    // Check if there is content length
     if (parsed_response.content_length == null) {
         return @"error".file_size_not_found;
     }
 
+    // Check if the file size is within the allowed maximum size
     const fileSize: usize = parsed_response.content_length.?;
     if (fileSize > max_file_size) {
         return @"error".file_size_exceeded;
     }
 
+    // Get eTag
     if (parsed_response.getEtag()) |etag| {
         if (etag.len > self.etag.len) {
             @memcpy(self.etag[0..].ptr, etag[0..self.etag.len]);
@@ -194,13 +203,11 @@ pub fn filedownload(self: *@This(), uri: std.Uri, file_name: [*:0]const u8, comp
 
     try self.file.sync(); // Perfom sync to reduce chances of critical errors
 
-    while (self.file.tell() < fileSize) {
-        // Calculate the end position of the request
-        const startPosition: usize = self.file.tell();
-
+    while (isStillInDownload(self.file.tell(), fileSize)) |startPosition| {
         const requestEnd = calcRequestEnd(fileSize, block_size, startPosition);
 
-        _ = try self.connection.send(try sendGetRangeRequest(&self.tx_buffer, &uri, startPosition, requestEnd));
+        // Prepare and send the Range request
+        _ = try self.connection.send(try prepareGetRangeRequest(&self.tx_buffer, &uri, startPosition, requestEnd));
 
         // We expect a HTTP code 206 Partial Content.
         if (206 == try parsed_response.processHeaders(try http_header.response.recieveResponse(&self.connection, &self.rx_buffer, &self.headers, connectionWaitForRxCallback))) {
